@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Home preview layout checks</title>
+<style>body{margin:0}iframe{display:block;border:0;width:320px;height:900px}pre{white-space:pre-wrap}</style>
+<iframe id="preview" src="../index.html" title="ManyManager Simple home preview"></iframe>
+<pre id="results" data-status="running">Running</pre>
+<script type="module">
+const frame=document.getElementById("preview"),results=document.getElementById("results");
+let count=0;
+const check=(value,message)=>{if(!value)throw Error(message);count++};
+const pause=()=>new Promise(resolve=>setTimeout(resolve,20));
+async function until(condition){for(let i=0;i<150;i++){if(condition())return;await pause()}throw Error("Timed out")}
+try{
+ await until(()=>frame.contentDocument?.querySelector('[data-action="expense"]'));
+ const d=frame.contentDocument,w=frame.contentWindow;
+ const script=d.createElement("script");script.type="module";
+ script.textContent='import {state} from "/js/state.js";import {loadLanguage} from "/js/i18n.js";import {previewModel,setBudget,snapshotFor} from "/js/preview-model.js";await import("/js/fixture.js");window.homeTest={state,loadLanguage,previewModel,setBudget,snapshotFor};';
+ d.body.append(script);await until(()=>w.homeTest);
+ const {state,loadLanguage,previewModel,setBudget,snapshotFor}=w.homeTest;
+ const click=async selector=>{const e=d.querySelector(selector);check(Boolean(e),"Missing "+selector);e.click();await pause()};
+ const rect=s=>d.querySelector(s).getBoundingClientRect();
+ const style=s=>w.getComputedStyle(d.querySelector(s));
+ const refresh=async()=>{await click("#menu-button");await click('[data-action="close-overlay"]')};
+ const before=snapshotFor(new Date());
+ for(const width of [320,360])for(const height of [568,900])for(const language of ["he","en","ru"])for(const theme of ["light","dark"]){
+  frame.style.width=width+"px";frame.style.height=height+"px";
+  await loadLanguage(language);state.language=language;state.theme=theme;state.budgetExpanded=false;await refresh();
+  const h=rect(".home-title"),b=rect(".add-expense"),o=rect(".home-ornament"),c=rect(".home-card");
+  check(h.bottom<=b.top&&b.bottom<o.top&&o.bottom<c.top,"Title, action, ornament, summary order");
+  check(Math.abs(o.width/o.height-568/164)<.02,"Original ornament proportions");
+  check(Math.abs((o.left+o.right-rect(".home").left-rect(".home").right)/2)<2,"Centered ornament in available content");
+  check(o.top-b.bottom>=30&&c.top-o.bottom>=30,"Comfortable ornament spacing");
+  check(b.height>=56,"Prominent action target");
+  check(style(".home-spending .money").fontSize==="17px"&&style(".home-spending .money").fontWeight===style(".budget-toggle .money").fontWeight,"Understated matching amount typography");
+  check(style(".home-ornament").backgroundColor===(theme==="light"?"rgb(116, 121, 128)":"rgb(166, 171, 179)"),"Theme color updates");
+  check(d.querySelector(".home-ornament-space").getAttribute("aria-hidden")==="true"&&!d.querySelector(".home-ornament").hasAttribute("tabindex"),"Decorative and unfocusable");
+  check(style(".home-ornament").animationName==="none"&&style(".home-ornament").boxShadow==="none","No ornament animation or shadow");
+  check(d.documentElement.scrollWidth<=width,"No horizontal page overflow");
+  if(height===900)check(height-c.bottom<=34,"Summary rests near bottom of tall viewport");
+  await click('[data-action="budget-toggle"]');
+  check(d.querySelector(".budget-toggle").getAttribute("aria-expanded")==="true"&&!d.querySelector(".budget-breakdown").hidden,"Breakdown expands");
+  check(d.querySelectorAll(".budget-source").length===2,"Payment-method rows retained");
+  check(rect(".add-expense").bottom<rect(".home-ornament").top&&rect(".home-ornament").bottom<rect(".home-card").top,"Expansion remains in flow");
+  const scroller=d.querySelector("#page-scroll");scroller.scrollTop=scroller.scrollHeight;await pause();
+  check(rect(".budget-breakdown").bottom<=height+1,"Expanded breakdown reachable by scrolling");
+  scroller.scrollTop=0;await click('[data-action="expense"]');
+  check(Boolean(d.querySelector("#amount"))&&Boolean(d.querySelector('[data-action="save-expense"]')),"Add expense opens existing form");
+  await click('.sheet [data-action="close-overlay"]');
+ }
+ // Stress values and period labels without altering production/model implementation.
+ previewModel.expenses[0].amountMinor=123456789012300;
+ setBudget(new Date(),246913578196700);await pause();
+ for(const language of ["he","en","ru"])for(const theme of ["light","dark"]){
+  await loadLanguage(language);state.language=language;state.theme=theme;state.budgetExpanded=true;frame.style.width="320px";frame.style.height="568px";await refresh();
+  d.querySelector(".home-month").textContent=d.querySelector(".home-month").textContent+" — "+d.querySelector(".home-month").getAttribute("aria-label").repeat(2);
+  await pause();
+  check(d.documentElement.scrollWidth<=320,"Large values and long period label fit");
+  for(const e of d.querySelectorAll(".home-summary-row .money"))check(e.scrollWidth<=e.clientWidth+1,"Large amount not clipped");
+  const s=d.querySelector("#page-scroll");s.scrollTop=s.scrollHeight;await pause();
+  check(rect(".budget-breakdown").bottom<=568+1,"Long label and expanded summary scroll naturally");
+ }
+ check(before.allocated===2000000&&before.spent===35000&&before.remaining===1965000,"Existing fixture calculations preserved");
+ // Verify the local mask asset actually contains transparent margins and opaque ink.
+ const img=new w.Image();img.src="../assets/home-ornament.svg";await img.decode();
+ const canvas=d.createElement("canvas");canvas.width=568;canvas.height=164;
+ const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);
+ check(ctx.getImageData(0,0,1,1).data[3]===0,"White reference background removed");
+ check(ctx.getImageData(284,82,1,1).data[3]>200,"Original central ink retained");
+ const q=new URLSearchParams(location.search);
+ await loadLanguage(q.get("lang")||"he");state.language=q.get("lang")||"he";state.theme=q.get("theme")||"light";
+ frame.style.width=(q.get("width")||320)+"px";frame.style.height=(q.get("height")||900)+"px";
+ previewModel.expenses[0].amountMinor=q.has("large")?123456789012300:10000;
+ setBudget(new Date(),q.has("large")?246913578196700:2000000);
+ state.budgetExpanded=q.has("expanded");await refresh();
+ if(q.has("long"))d.querySelector(".home-month").textContent+=" — "+d.querySelector(".home-month").getAttribute("aria-label");
+ d.querySelector("#page-scroll").scrollTop=q.has("bottom")?d.querySelector("#page-scroll").scrollHeight:0;
+ results.dataset.status="passed";results.textContent="ALL "+count+" PASSED";
+}catch(error){results.dataset.status="failed";results.textContent="FAIL "+error.stack}
+</script></html>

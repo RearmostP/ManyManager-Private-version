@@ -95,7 +95,7 @@ class BudgetHomeUi(
             })
         } else {
             snapshot.sources.forEach { sourceBudget ->
-                rows.addView(LinearLayout(context).apply {
+                rows.addView(HomeSummaryRow(context).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     setPadding(0, dp(8), 0, dp(8))

@@ -71,7 +71,7 @@ try {
  check(doc.querySelector("#amount").value==="12.34"&&doc.querySelector("#expense-note").value==="event note"&&doc.querySelector("#expense-date").value===date,"app events preserve category draft");
  check(!doc.querySelector('[data-action="save-expense"]').disabled,"app events enable save");
  click('[data-action="save-expense"]');
- check(!doc.querySelector("#amount")&&doc.querySelector(".amount-display").textContent.includes("12.34"),"app events commit and refresh home");
+ check(!doc.querySelector("#amount")&&doc.querySelector(".home-spending .money").textContent.includes("12.34"),"app events commit and refresh home");
  click("#menu-button");click('[data-action="navigate"][data-index="1"]');click('[data-action="tab"][data-index="2"]');
  check(doc.querySelectorAll('[data-action="view-expense"]').length===1,"app events populate expense list once");
  click('[data-action="view-expense"]');click('[data-action="begin-expense-edit"]');type("#details-amount","2.01");click('[data-action="cancel-expense-edit"]');click('#expense-details [data-action="close-overlay"]');

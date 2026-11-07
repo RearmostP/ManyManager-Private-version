@@ -6,7 +6,7 @@ Current requirements: [docs/README.md](../docs/README.md). Android and HTML shar
 | --- | --- | --- | --- |
 | Budget management | `page_budget.xml`, `dialog_period_budget.xml`, `BudgetManagementUi.kt`, `MainActivity.kt` | `screens/budget.js`, `components/source-dialog.js` | Period arrows, one total, Update budget; captured period |
 | Payment methods | `dialog_add_source.xml`, `dialog_edit_source.xml`, `BudgetSourceDialogs.kt` | `components/source-dialog.js` | Name-only Add/Rename, stable IDs, no money entry |
-| Home | `page_home.xml`, `BudgetHomeUi.kt` | `screens/home.js` | Spending, remaining = budget − spending, expandable method spending |
+| Home | `page_home.xml`, `HomeLayout.kt`, `BudgetHomeUi.kt`, transparent `home_ornament.png` | `screens/home.js`, `css/screens/home.css`, `assets/home-ornament.svg` | Approved layout: Add expense → theme-tinted ornament → compact period/spending/remaining card; existing method spending expansion and normal page scrolling |
 | Summary | `SummaryBreakdownUi.kt`, `AllExpensesUi.kt`, summary XML rows/panels | `screens/summary.js` | Category/method spending and count, inline expandable rows, All Expenses |
 | Expense entry/details/edit/delete | `ExpenseSheetDialog.kt`, `ExpenseDetailsDialog.kt`, `ExpenseState.kt` | expense components, `app.js` | Required payment method and category, optional subcategory/note, civil date, stable expense ID; confirmation before deletion |
 | Category selection | `CategoryPickerDialog.kt`, `ExpenseSheetDialog.kt`, `CategoryManagementUi.kt` | `components/category-picker.js`, `components/expense-sheet.js`, `screens/categories.js` | Inline main list for creation, separate edit picker, real children, explicit parent footer, draft-only confirmation; creation only in Management |

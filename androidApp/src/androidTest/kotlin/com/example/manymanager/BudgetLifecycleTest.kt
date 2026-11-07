@@ -148,7 +148,7 @@ class BudgetLifecycleTest {
                 assertEquals(2, snapshot.expenseCount)
                 fun money(value: Long) = activity.getString(R.string.ils_amount,
                     BudgetAmounts.number(value, activity.resources.configuration.locales[0]))
-                assertEquals(BudgetAmounts.number(1500, activity.resources.configuration.locales[0]),
+                assertEquals(money(1500),
                     activity.findViewById<TextView>(R.id.homeTotal).text.toString())
                 assertEquals(money(8500), activity.findViewById<TextView>(R.id.homeBudgetRemaining).text.toString())
                 assertEquals(money(10000), activity.findViewById<TextView>(R.id.budgetAllocatedTotal).text.toString())
@@ -169,7 +169,7 @@ class BudgetLifecycleTest {
             }
             screen.recreate()
             awaitUi(screen) { it.findViewById<TextView>(R.id.homeTotal).text.toString() ==
-                BudgetAmounts.number(1500, it.resources.configuration.locales[0]) }
+                it.getString(R.string.ils_amount, BudgetAmounts.number(1500, it.resources.configuration.locales[0])) }
         } finally {
             scenario?.close()
             scenario = null
@@ -431,7 +431,7 @@ class BudgetLifecycleTest {
         screen.onActivity {
             val row = it.findViewById<android.widget.LinearLayout>(R.id.expenseRows).getChildAt(0)
             assertTrue(row.contentDescription.contains(category.name))
-            assertEquals(BudgetAmounts.number(101, it.resources.configuration.locales[0]),
+            assertEquals(it.getString(R.string.ils_amount, BudgetAmounts.number(101, it.resources.configuration.locales[0])),
                 it.findViewById<TextView>(R.id.homeTotal).text.toString())
         }
         screen.onActivity {
@@ -477,7 +477,7 @@ class BudgetLifecycleTest {
         success(app.repository.updateExpense(first.id, NewExpense(400, first.date, first.sourceId, first.categoryId, first.note)))
         awaitUi(screen) { rowAmount(it, R.id.categorySummaryRows, catA.id) == money(it, 400) }
         screen.onActivity {
-            assertEquals(BudgetAmounts.number(900, it.resources.configuration.locales[0]), it.findViewById<TextView>(R.id.homeTotal).text.toString())
+            assertEquals(money(it, 900), it.findViewById<TextView>(R.id.homeTotal).text.toString())
             assertEquals(money(it, 700), rowAmount(it, R.id.sourceSummaryRows, a.id))
             assertEquals(money(it, -400), it.findViewById<TextView>(R.id.homeBudgetRemaining).text.toString())
             assertEquals(3, rows(it, R.id.expenseRows).childCount)

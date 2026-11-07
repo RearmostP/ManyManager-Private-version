@@ -460,7 +460,7 @@ class MainActivity : AppCompatActivity() {
         if (page == 1) scroll.doOnPreDraw { scroll.scrollTo(0, top) }
         val snapshot = (state as? PersistentDataState.Ready)?.snapshot
         val total = snapshot?.let { BudgetAmounts.number(it.totalSpentMinor, resources.configuration.locales[0]) } ?: "—"
-        findViewById<TextView>(R.id.homeTotal).text = total
+        findViewById<TextView>(R.id.homeTotal).text = snapshot?.let { getString(R.string.ils_amount, total) } ?: "—"
         findViewById<TextView>(R.id.summaryTotal).text = total
         findViewById<TextView>(R.id.summaryCount).text = snapshot?.let {
             getString(R.string.monthly_expense_count,

@@ -29,7 +29,7 @@ Registered `MIGRATION_2_3` adds nullable category parent IDs, a calculator-scope
 
 Budget Management retains period arrows and shows one total with an Update budget action. Its separate Payment methods section lists name-only rows with Add and Rename actions. The budget form captures the selected period; rollover does not redirect its save.
 
-Home shows active-period spending, remaining and total budget. Expanding shows spending by payment method. Summary retains All Expenses, Categories and Payment Methods with spending, counts and expandable inline expense rows in unified rounded cards. Methods without expenses are omitted from spending summaries.
+Home shows the title/navigation, the prominent Add expense action, a centered decorative ornament and a compact summary toward the bottom of a tall viewport. The summary contains the period, spending and remaining amounts in matching 17sp bold type. Short windows, long labels and large amounts remain in normal scrolling flow. The ornament uses a transparent crop of the original reference, retains its proportions, follows light/dark colors and is excluded from focus/accessibility. Expanding the remaining row retains its chevron and shows total budget and spending by payment method. Summary retains All Expenses, Categories and Payment Methods with spending, counts and expandable inline expense rows in unified rounded cards. Methods without expenses are omitted from spending summaries.
 
 Expense creation immediately shows a compact inline list of main categories in the form's normal scroll. A selected row shows a checkmark and the confirmed parent or parent/child path. Opening a parent lists only real children; choosing a child or the footer's Select main category confirms only the draft. Back/Cancel preserves the prior selection and every other draft field. Editing uses a separate two-level picker with the same confirmation rules. No Uncategorized, synthetic General or creation shortcuts appear in expense selection. With no main categories, a localized Category Management explanation appears and saving is disabled.
 
@@ -49,7 +49,7 @@ No refunds/nonpositive expenses, cloud sync, accounts, multiple-calculator UI, h
 
 ## Development and visual reference
 
-Keep Android and [ui-reference](../ui-reference/README.md) visually aligned, including essential states. Preview data stays in memory and resets on reload; do not reproduce production persistence/lifecycle. Fictional examples belong in `ui-reference/js/fixture.js`. Verify affected interactions.
+Keep Android and [ui-reference](../ui-reference/README.md) visually aligned, including essential states. The approved home design is implemented in both native XML/Views and HTML: Add expense above a decorative theme-aware ornament and a compact lower summary. Financial and expense-entry behavior is unchanged. Preview data stays in memory and resets on reload; do not reproduce production persistence/lifecycle. Fictional examples belong in `ui-reference/js/fixture.js`. Verify affected interactions.
 
 With a compatible JDK, or Android Studio’s Gradle runner:
 
@@ -74,6 +74,14 @@ Chrome headless passed HTML checks: single budget model 14, expense forms 32, su
 Android Studio Gradle passed debug assembly, lint, 33 JVM tests and test APK assembly. The connected Samsung-device run passed 72 instrumentation tests using the isolated `com.example.simple.manymanager.uitest` target, test Application/preferences and UUID test databases; neither installed production edition was cleared or uninstalled. Device execution used a local Gradle init script to override only the test run's application IDs.
 
 Coverage includes populated 1→3 and 2→3 migrations, retained direct/null assignments and calculator settings, database/repository depth and ownership rejection, mandatory category writes, legacy edits, management creation, same-name children, browsing/cancel/draft preservation, recreation, parent/child Summary sections and exact totals/counts, and category paths in details/lists. Picker layouts were checked at 320dp in all three languages and both themes; Hebrew light and Russian dark screenshots were visually inspected. These results do not establish pixel parity, manual accessibility, API 30 runtime or arbitrary process-death behavior.
+
+## Verification of the compact home layout
+
+Debug assembly, lint, 33 JVM tests and test APK assembly passed. On the connected Samsung device, all 72 existing instrumentation tests passed; after correcting a new test method's JUnit return type and waiting for scrolling/layout to settle, both new HomeLayoutTest cases passed in a separate focused run. The latter cover real Add expense wiring and native 320dp-wide home layouts at 568dp/720dp heights in Hebrew, English and Russian, light/dark colors, very large spending/remaining values, long period labels, expansion/collapse and reaching the final breakdown row by scrolling. Six locale/theme screenshots were visually inspected.
+
+Instrumentation used a local ignored init script with the isolated target `com.example.simple.manymanager.hometest`, test Application, in-memory/UUID databases, prefixed preferences and leave-APKs-installed enabled. The normal `com.example.simple.manymanager` debug APK, versionCode 2/versionName 0.2.0, was then rebuilt, installed and launched successfully without clearing or uninstalling existing data. The personal edition and main branch were untouched. The wireless connection briefly dropped after installation and was restored; a final post-installation manual tap-through could not be completed because the device was locked.
+
+These checks do not establish API 30 runtime, arbitrary process-death behavior, full manual screen-reader/large-font/keyboard coverage or exact HTML/native pixel parity. The device's configured font is retained.
 
 ## Implementation map
 
