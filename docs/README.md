@@ -37,7 +37,7 @@ Category Management lists main categories; opening one shows its children and Ad
 
 Read-only details, full in-place editing, confirmed deletion, civil-date picker and optional note behavior remain. Save edits the same ID and returns to saved details. Cancel/Back discards edits; deletion requires confirmation. Closing details preserves Summary tab, expansion and scroll.
 
-Hebrew (default RTL), Russian and English (LTR), and light/dark appearance remain supported. Appearance preferences stay outside Room. Simple’s applicationId and Android namespace are `com.example.simple.manymanager`. The personal edition retains `com.example.manymanager`. The packages install separately and do not automatically share or transfer app-private data. Version and signing are unchanged. Exported Room schemas are also retained under the renamed database class’s schema directory for migration tests.
+Hebrew (default RTL), Russian and English (LTR), and light/dark appearance remain supported. Appearance preferences stay outside Room. Simple’s applicationId is `com.manymanager.privateversion`; its internal Android namespace remains `com.example.simple.manymanager`. Previous builds used applicationId `com.example.simple.manymanager`; the new package installs separately and does not automatically inherit their database or preferences. The personal edition retains `com.example.manymanager`. The packages install separately and do not automatically share or transfer app-private data. Version and signing are unchanged. Exported Room schemas are also retained under the renamed database class’s schema directory for migration tests.
 
 ## Lifecycle and limits
 
