@@ -1,17 +1,17 @@
 # ManyManager Simple release guide
 
-This guide targets `original`: use `simple-v<VERSION>` and `ManyManager-Simple-<VERSION>.apk` for this branch. Simple uses its own package identity, `com.example.simple.manymanager`, and retains the existing signing configuration.
+This guide targets `main` in `RearmostP/ManyManager-Private-version` (formerly `original` in `RearmostP/ManyManager`): use `simple-v<VERSION>` and `ManyManager-Simple-<VERSION>.apk` for this branch. Simple uses its own package identity, `com.example.simple.manymanager`, and retains the existing signing configuration.
 
 Run commands from the repository root, using a clean, reviewed commit and a compatible JDK. The current checked-in configuration on this branch is `com.example.simple.manymanager`, versionName `0.2.0`, versionCode `2`. Recheck [androidApp/build.gradle.kts](../androidApp/build.gradle.kts) before each release; this is not a claim that an APK was published.
 
 ## Independent releases
 
-| Branch | Application | Tag | APK | Release title |
+| Repository / branch | Application | Tag | APK | Release title |
 | --- | --- | --- | --- | --- |
-| `main` | ManyManager | `manymanager-v<VERSION>` | `ManyManager-<VERSION>.apk` | `ManyManager <VERSION>` |
-| `original` | ManyManager Simple | `simple-v<VERSION>` | `ManyManager-Simple-<VERSION>.apk` | `ManyManager Simple <VERSION>` |
+| `RearmostP/ManyManager` / `main` | ManyManager | `manymanager-v<VERSION>` | `ManyManager-<VERSION>.apk` | `ManyManager <VERSION>` |
+| `RearmostP/ManyManager-Private-version` / `main` | ManyManager Simple | `simple-v<VERSION>` | `ManyManager-Simple-<VERSION>.apk` | `ManyManager Simple <VERSION>` |
 
-Each application can advance and publish independently. Each release contains only its own APK and its tag points to the exact build commit. Filter tags by application prefix rather than GitHub's global “Latest”. Preserve historical tags/releases, including `0.1.0`.
+Each application can advance and publish independently. Each release contains only its own APK and its tag points to the exact build commit. Filter tags by application prefix rather than GitHub's global “Latest”. Preserve historical tags/releases, including `0.1.0`. Existing tags/releases remain in the old repository; the source-branch migration does not republish releases, APKs or signing material.
 
 Simple (`com.example.simple.manymanager`) and the personal edition (`com.example.manymanager`) have distinct package identities and can be installed side by side. Each package has separate app-private data; changing applicationId does not automatically transfer the previous package’s database or preferences. VersionCode can advance independently for each package. Normal updates require the same applicationId and signing identity and a versionCode higher than every previously distributed build for that package; update versionName accordingly.
 

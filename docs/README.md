@@ -1,6 +1,6 @@
 # ManyManager Simple — current application
 
-This document describes `original`. `main` belongs to the personal edition; do not infer its behavior here. ManyManager Simple uses native Android XML/Views and AppCompat. `:androidApp` owns production data; `:shared` retains a Compose sample.
+This document describes `main` in `RearmostP/ManyManager-Private-version`, migrated with the full history of `original` from `RearmostP/ManyManager`. The personal edition remains on `main` in the old `RearmostP/ManyManager` repository; do not infer its behavior here. ManyManager Simple uses native Android XML/Views and AppCompat. `:androidApp` owns production data; `:shared` retains a Compose sample.
 
 ## Single budget and payment methods
 

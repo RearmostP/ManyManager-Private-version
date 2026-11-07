@@ -1,6 +1,6 @@
 # ManyManager Simple UI reference
 
-Current behavior: [branch documentation](../docs/README.md). This preview follows `original`; `main` is the personal edition.
+Current behavior: [branch documentation](../docs/README.md). This preview follows `main` in `RearmostP/ManyManager-Private-version`, formerly `original` in `RearmostP/ManyManager`. The personal edition remains in the old repository.
 
 This is a lightweight, in-memory design playground for the native Android XML/Views app. Reload resets all examples, drafts and appearance choices. It does not emulate Room, migrations or Android lifecycle guarantees.
 
