@@ -2,7 +2,7 @@
 
 This guide targets `main` in `RearmostP/ManyManager-Private-version` (formerly `original` in `RearmostP/ManyManager`): use `simple-v<VERSION>` and `ManyManager-Simple-<VERSION>.apk` for this branch. Simple uses its own package identity, `com.manymanager.privateversion`, and retains the existing signing configuration.
 
-Run commands from the repository root, using a clean, reviewed commit and a compatible JDK. The current checked-in configuration on this branch is `com.manymanager.privateversion`, versionName `0.2.0`, versionCode `2`. Recheck [androidApp/build.gradle.kts](../androidApp/build.gradle.kts) before each release; this is not a claim that an APK was published.
+Run commands from the repository root, using a clean, reviewed commit and a compatible JDK. The current checked-in configuration on this branch is `com.manymanager.privateversion`, versionName `0.3.0`, versionCode `3`. Recheck [androidApp/build.gradle.kts](../androidApp/build.gradle.kts) before each release; this is not a claim that an APK was published.
 
 ## Independent releases
 
