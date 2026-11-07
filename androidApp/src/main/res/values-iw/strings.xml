@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="rename_category">שינוי שם קטגוריה</string>
+    <string name="rename_category_label">שינוי שם הקטגוריה %1$s</string>
+    <string name="rename_subcategory_label">שינוי שם תת־הקטגוריה %1$s</string>
     <string name="app_name">ההוצאות שלי</string>
     <string name="open_menu">פתיחת תפריט</string>
     <string name="summary_intro">קצת יותר ברור לאן הכסף הולך</string>

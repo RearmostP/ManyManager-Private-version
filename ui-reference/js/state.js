@@ -7,7 +7,7 @@ export const state={
   currentDate:new Date(),budgetMonth:periodFor(new Date()).start,
   expenseDraft:{amount:"",date:"",note:"",categoryId:null,sourceId:null},
   expenseEditId:null,expenseOriginal:null,expandedSummaryGroups:new Set(),expenseEditing:false,expenseDetailsError:null,
-  categoryDraft:"",categoryReturnOverlay:null,categoryParentId:null,categoryManagementId:null,
+  categoryDraft:"",categoryEditId:null,categoryReturnOverlay:null,categoryParentId:null,categoryManagementId:null,
   pickerParentId:null,pickerReturnOverlay:null,
   sourceDraft:{name:"",sourceId:null},budgetDraft:"",
   dialogMonth:null
@@ -34,6 +34,8 @@ export function closeOverlay(){
   }else if(state.overlay==="add-category"){
     state.overlay=state.categoryReturnOverlay;
     state.categoryReturnOverlay=null;
+  }else if(state.overlay==="edit-category"){
+    state.overlay=null;state.categoryEditId=null;state.categoryDraft="";
   }else if(state.overlay==="delete-expense")state.overlay="expense-details";
   else if(state.overlay==="expense-details"&&state.expenseEditing)cancelExpenseEdit();
   else state.overlay=null;

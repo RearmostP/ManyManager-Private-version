@@ -1,4 +1,7 @@
 {
+  "rename_category": "שינוי שם קטגוריה",
+  "rename_category_label": "שינוי שם הקטגוריה %1$s",
+  "rename_subcategory_label": "שינוי שם תת־הקטגוריה %1$s",
   "category_management_required": "יש ליצור תחילה קטגוריה במסך ניהול קטגוריות.",
   "select_main_category": "בחירה בקטגוריה הראשית",
   "choose_category": "בחירת קטגוריה",

@@ -34,6 +34,14 @@ class CategoryCreationDialog(
     init {
         input.doAfterTextChanged { onNameChanged(it.toString()) }
         dialog.setOnCancelListener { onCancel() }
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode != android.view.KeyEvent.KEYCODE_ESCAPE) false
+            else {
+                if (event.action == android.view.KeyEvent.ACTION_UP &&
+                    dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.isEnabled == true) onCancel()
+                true
+            }
+        }
         dialog.setOnShowListener {
             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener { onSubmit() }
             dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener { onCancel() }
@@ -43,17 +51,22 @@ class CategoryCreationDialog(
     fun show() { dialog.showWithRoundedSurface() }
 
     fun render(state: CategoryCreationState) {
-        dialog.setTitle(if (state.parentId == null) R.string.add_category_action else R.string.add_subcategory)
+        dialog.setTitle(if (state.categoryId != null) R.string.rename_category
+            else if (state.parentId == null) R.string.add_category_action else R.string.add_subcategory)
         if (input.text.toString() != state.name) {
             input.setText(state.name)
             input.setSelection(input.length())
         }
-        input.isEnabled = !state.submitting
+        input.isEnabled = !state.submitting && !state.interrupted
         dialog.setCancelable(!state.submitting)
         dialog.setCanceledOnTouchOutside(!state.submitting)
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).apply {
-            isEnabled = !state.submitting && state.result !is DataResult.Success
-            setText(if (state.submitting) R.string.category_saving else R.string.add_category)
+            isEnabled = !state.submitting && !state.interrupted && state.result !is DataResult.Success
+            setText(when {
+                state.submitting -> R.string.category_saving
+                state.categoryId != null -> R.string.save_expense_changes
+                else -> R.string.add_category
+            })
         }
         dialog.getButton(DialogInterface.BUTTON_NEGATIVE).isEnabled = !state.submitting
         val error = (state.result as? DataResult.Failure)?.error

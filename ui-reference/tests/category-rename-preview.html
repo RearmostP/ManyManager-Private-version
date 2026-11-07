@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ManyManager — שינוי שם קטגוריה</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens/home.css">
+<link rel="stylesheet" href="css/screens/summary.css">
+<link rel="stylesheet" href="css/screens/budget.css">
+<link rel="stylesheet" href="css/screens/settings.css">
+<link rel="stylesheet" href="css/screens/categories.css">
+</head>
+<body>
+<div id="app" class="app">
+<header class="topbar"><button id="menu-button" class="icon-button" type="button"></button></header>
+<main id="page-scroll" class="page-scroll"><div id="page" class="page"></div></main>
+</div>
+<div id="overlay-root"></div>
+<script type="module">
+import "../js/app.js";
+import {state} from "../js/state.js";
+import {addCategory,addSource,createExpense,setBudget} from "../js/preview-model.js";
+import {beginCategoryRename} from "../js/components/category-dialog.js";
+import {loadLanguage} from "../js/i18n.js";
+import {civilDate} from "../js/budget-period.js";
+// Isolated fictional examples; reload resets all changes.
+const options=new URLSearchParams(location.search);
+const lang=["he","en","ru"].includes(options.get("lang"))?options.get("lang"):"he";
+await loadLanguage(lang);state.language=lang;state.theme=options.get("theme")==="dark"?"dark":"light";
+const names={
+ he:["מזון","קניות בסופר","בריאות","מזומן"],
+ en:["Food","Supermarket","Health","Cash"],
+ ru:["Продукты","Супермаркет","Здоровье","Наличные"]
+}[lang];
+const parent=addCategory(names[0]),child=addCategory(names[1],parent.id);
+addCategory(names[2]);
+const source=addSource(names[3]);
+createExpense({amountMinor:10000,date:civilDate(new Date()),sourceId:source.id,categoryId:parent.id});
+createExpense({amountMinor:25000,date:civilDate(new Date()),sourceId:source.id,categoryId:child.id});
+state.page=4;
+beginCategoryRename(parent.id);
+setBudget(new Date(),2000000);
+requestAnimationFrame(()=>document.querySelector("#category-name")?.focus());
+</script>
+</body>
+</html>

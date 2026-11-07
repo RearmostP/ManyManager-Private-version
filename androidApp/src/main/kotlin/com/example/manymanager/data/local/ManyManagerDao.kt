@@ -53,6 +53,9 @@ abstract class ManyManagerDao {
         calculatorId: String, startEpochDay: Long, endExclusiveEpochDay: Long
     ): List<ExpenseEntity>
 
+    @Query("UPDATE categories SET name = :name WHERE calculatorId = :calculatorId AND id = :id")
+    abstract suspend fun renameCategory(calculatorId: String, id: String, name: String): Int
+
     @Query("UPDATE budget_sources SET name = :name WHERE calculatorId = :calculatorId AND id = :id")
     abstract suspend fun renameSource(calculatorId: String, id: String, name: String): Int
 

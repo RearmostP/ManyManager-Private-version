@@ -1,4 +1,7 @@
 {
+  "rename_category": "Rename category",
+  "rename_category_label": "Rename category %1$s",
+  "rename_subcategory_label": "Rename subcategory %1$s",
   "category_management_required": "First create a category in Category Management.",
   "select_main_category": "Select main category",
   "choose_category": "Choose a category",

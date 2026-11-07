@@ -14,7 +14,7 @@
     <LinearLayout android:id="@+id/addExpense"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="24dp" android:minHeight="56dp" android:padding="16dp"
-        android:background="@drawable/button_primary" android:orientation="horizontal"
+        android:background="@drawable/button_add_expense" android:orientation="horizontal"
         android:gravity="center" android:clickable="true" android:focusable="true">
         <TextView style="@style/Text"
             android:layout_width="wrap_content" android:layout_height="wrap_content"

@@ -12,7 +12,7 @@ import {drawer} from "./components/drawer.js";
 import {expense,canSaveExpense} from "./components/expense-sheet.js";
 import {expenseDelete} from "./components/expense-delete.js";
 import {expenseDetails,expenseDetailsBody} from "./components/expense-details.js";
-import {categoryDialog,beginCategoryCreation,confirmCategoryCreation} from "./components/category-dialog.js";
+import {categoryDialog,beginCategoryCreation,confirmCategoryCreation,beginCategoryRename,confirmCategoryRename} from "./components/category-dialog.js";
 import {sourceDialog,canConfirmSourceEdit,budgetDialog} from "./components/source-dialog.js";
 
 import {categoryPicker,openCategoryPicker,chooseCategory,selectCategory} from "./components/category-picker.js";
@@ -46,7 +46,7 @@ function render(){
       confirmation.innerHTML=state.overlay==="category-picker"?categoryPicker():expenseDelete();overlay.append(confirmation);
     }else if(focusId)panel.querySelector("#"+CSS.escape(focusId))?.focus({preventScroll:true});
   }else overlay.innerHTML=({
-    menu:drawer,expense,"add-category":categoryDialog,"category-picker":categoryPicker,
+    menu:drawer,expense,"add-category":categoryDialog,"edit-category":categoryDialog,"category-picker":categoryPicker,
     "add-source":sourceDialog,"edit-source":sourceDialog,"edit-budget":budgetDialog
   })[state.overlay]?.()??"";
   app.inert=Boolean(state.overlay);
@@ -107,6 +107,14 @@ document.addEventListener("click",async event=>{
       changePage(Number(button.dataset.index),scroll);state.overlay=null;render();break;
     case "back":
       if(goBack(scroll))renderKeepScroll();break;
+    case "edit-category":
+      if(beginCategoryRename(button.dataset.id)){
+        renderKeepScroll();document.getElementById("category-name")?.focus();
+      }
+      break;
+    case "confirm-rename-category":
+      if(!confirmCategoryRename()){showError("category-error","category_name_required");break}
+      renderKeepScroll();break;
     case "add-category":
       beginCategoryCreation();renderKeepScroll();break;
     case "confirm-category":

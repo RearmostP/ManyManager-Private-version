@@ -1,5 +1,8 @@
 .categories-page h1{margin-top:12px}
 .category-empty{font-size:14px;color:var(--muted);margin-top:24px}
-.category-row{margin-top:16px;padding:20px;font-size:16px}
+.category-row{display:flex;align-items:center;gap:8px;margin-top:16px;padding:4px 8px;font-size:16px}
+.category-row-name{flex:1;min-width:0;padding:16px 12px;text-align:start;white-space:normal;overflow-wrap:anywhere}
+button.category-row-name{align-self:stretch;min-height:48px}
+.category-edit{flex:none;min-width:48px;min-height:48px}
 .category-add{display:block;width:100%;min-height:48px;margin-top:16px;padding:14px;text-align:start;font-size:14px}
 [dir=rtl] .categories-page .icon{transform:scaleX(-1)}

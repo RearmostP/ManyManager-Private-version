@@ -108,6 +108,12 @@ export function addCategory(name,parentId=null){
   return category;
 }
 
+export function renameCategory(id,name){
+  const category=previewModel.categories.find(item=>item.id===id),clean=name.trim();
+  if(!category||!clean)return false;
+  category.name=clean;changed();return true;
+}
+
 export function addSource(name){
   const clean=name.trim();if(!clean)return null;
   const source={id:`source-${previewModel.nextSourceId++}`,name:clean};

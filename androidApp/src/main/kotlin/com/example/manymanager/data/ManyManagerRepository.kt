@@ -143,6 +143,15 @@ class ManyManagerRepository(
         category.domain()
     }
 
+    /** Changes only the owned category's name; IDs, hierarchy and expense references stay intact. */
+    suspend fun renameCategory(categoryId: String, name: String): DataResult<Category> = execute { calculator ->
+        val clean = cleanName(name)
+        val category = dao.categories(calculator.id).firstOrNull { it.id == categoryId }
+            ?: reject(DataError.MissingEntity(EntityKind.CATEGORY, categoryId))
+        check(dao.renameCategory(calculator.id, categoryId, clean) == 1)
+        category.copy(name = clean).domain()
+    }
+
     suspend fun createPaymentMethod(name: String): DataResult<BudgetSource> = execute { calculator ->
         val source = BudgetSourceEntity(calculator.id, UUID.randomUUID().toString(), cleanName(name))
         dao.insertSource(source)

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="rename_category">Rename category</string>
+    <string name="rename_category_label">Rename category %1$s</string>
+    <string name="rename_subcategory_label">Rename subcategory %1$s</string>
     <string name="app_name">My expenses</string>
     <string name="open_menu">Open menu</string>
     <string name="summary_intro">A clearer view of where your money goes</string>

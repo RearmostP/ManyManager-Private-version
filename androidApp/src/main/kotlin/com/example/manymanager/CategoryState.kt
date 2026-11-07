@@ -19,10 +19,12 @@ data class CategoryCreationState(
     val submitting: Boolean = false,
     val result: DataResult<Category>? = null,
     val interrupted: Boolean = false,
+    val categoryId: String? = null,
 ) {
     fun toBundle() = Bundle().apply {
         putBoolean("fromExpense", fromExpense)
         putString("parentId", parentId)
+        putString("categoryId", categoryId)
         putString("name", name)
         putBoolean("submitting", submitting)
         putBoolean("interrupted", interrupted)
@@ -43,6 +45,7 @@ data class CategoryCreationState(
             return CategoryCreationState(
                 fromExpense = bundle.getBoolean("fromExpense"),
                 parentId = bundle.getString("parentId"),
+                categoryId = bundle.getString("categoryId"),
                 name = bundle.getString("name").orEmpty(),
                 result = category?.let { DataResult.Success(it) },
                 // A new process must never silently repeat a possibly committed request.

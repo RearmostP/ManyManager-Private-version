@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
         )
         categoryManagementUi = CategoryManagementUi(
             findViewById(R.id.categoriesPage), ::navigateBack, ::showAddCategory,
-            persistentViewModel::retryCategories
+            persistentViewModel::retryCategories, ::showRenameCategory
         )
         categoryManagementUi?.parentId = savedInstanceState?.getString("categoryManagementParent")
         listOf(R.id.previousMonth, R.id.nextMonth).forEach { id ->
@@ -614,6 +614,12 @@ class MainActivity : AppCompatActivity() {
             window.show()
         }
         sourceEditingDialog?.render(state)
+    }
+
+    private fun showRenameCategory(category: com.example.simple.manymanager.domain.Category) {
+        dismissActiveDialogImmediately()
+        persistentViewModel.beginCategoryRename(category)
+        renderCategoryCreation(persistentViewModel.categoryCreation.value)
     }
 
     private fun showAddCategory() = showAddCategory(null)

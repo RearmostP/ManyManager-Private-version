@@ -59,7 +59,7 @@ try{
  click('[data-action="add-category"]');type("#category-name","   ");click('[data-action="confirm-category"]');
  check(!doc.querySelector("#category-error").hidden,"subcategory name required");
  type("#category-name","Supermarket");click('[data-action="confirm-category"]');
- check(doc.querySelector(".category-row").textContent==="Supermarket","subcategory created under opened parent");
+ check(doc.querySelector(".category-row-name").textContent==="Supermarket","subcategory created under opened parent");
  click('[data-action="back"]');check(doc.querySelectorAll('[data-action="open-category"]').length===1,"management back shows only main categories");
  click('[data-action="add-category"]');type("#category-name","Health");click('[data-action="confirm-category"]');
  nav(0);click('[data-action="expense"]');

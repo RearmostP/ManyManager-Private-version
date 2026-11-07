@@ -1,0 +1,99 @@
+<!doctype html><meta charset="utf-8"><base href="../"><title>Category rename checks</title>
+<pre id="results">Running…</pre>
+<script type="module">
+const results=[],out=document.querySelector("#results");
+const check=(value,label)=>{if(!value)throw Error(label);results.push("PASS "+label)};
+const wait=async fn=>{const end=performance.now()+15000;while(!fn()){if(performance.now()>end)throw Error("timeout");await new Promise(r=>setTimeout(r,20))}};
+try{
+ const frame=document.createElement("iframe");frame.src="index.html";frame.style="width:320px;height:720px";document.body.append(frame);
+ await wait(()=>frame.contentDocument?.querySelector('[data-action="expense"]'));
+ const doc=frame.contentDocument,win=frame.contentWindow;
+ const model=await win.eval('import("./js/preview-model.js")');
+ const {state,goBack}=await win.eval('import("./js/state.js")');
+ const {loadLanguage,t}=await win.eval('import("./js/i18n.js")');
+ const click=s=>{const el=doc.querySelector(s);if(!el)throw Error("Missing "+s);el.click()};
+ const type=value=>{const el=doc.querySelector("#category-name");el.value=value;el.dispatchEvent(new win.Event("input",{bubbles:true}))};
+ const flush=()=>new Promise(r=>setTimeout(r,30));
+ const refresh=async()=>{model.setBudget(new Date(),2000000);await flush()};
+ const {addCategory,addSource,createExpense,previewModel,snapshotFor,categoryPath,renameCategory}=model;
+ const parent=addCategory("Food"),child=addCategory("Shop",parent.id),other=addCategory("Health"),source=addSource("Cash");
+ const date=new Date(),civil=[date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
+ const direct=createExpense({amountMinor:10000,date:civil,sourceId:source.id,categoryId:parent.id});
+ const sub=createExpense({amountMinor:25000,date:civil,sourceId:source.id,categoryId:child.id});
+ const records=JSON.stringify(previewModel.expenses),relationships=JSON.stringify(previewModel.categories.map(({id,parentId})=>({id,parentId})));
+ model.setBudget(date,2000000);
+ const original=snapshotFor(date);
+ const edit=id=>click('[data-action="edit-category"][data-id="'+id+'"]');
+ const save=()=>click('[data-action="confirm-rename-category"]');
+ const close=()=>click('[data-action="close-overlay"]');
+ const management=async id=>{state.page=4;state.categoryManagementId=id;await refresh()};
+ for(const language of ["he","ru","en"]){
+  await loadLanguage(language);state.language=language;
+  for(const theme of ["light","dark"]){
+   state.theme=theme;await management(null);
+   check(doc.querySelectorAll('[data-action="edit-category"]').length===2,language+" "+theme+" main pencils");
+   const button=doc.querySelector('[data-action="edit-category"]');
+   check(button.getAttribute("aria-label")===t(language,"rename_category_label",parent.name),"localized accessible main label");
+   check(button.getBoundingClientRect().width>=48&&button.getBoundingClientRect().height>=48,"48px edit target");
+   state.expenseDraft.categoryId=child.id;state.pickerParentId=parent.id;
+   edit(parent.id);
+   check(state.categoryManagementId===null&&state.expenseDraft.categoryId===child.id,"pencil does not navigate or select");
+   check(doc.querySelector("#category-name").value===parent.name&&doc.activeElement.id==="category-name","prefilled focused name");
+   for(const invalid of ["","   "]){
+    type(invalid);save();
+    check(!doc.querySelector("#category-error").hidden&&doc.querySelector("#category-error").textContent===t(language,"category_name_required"),"localized required name");
+   }
+   type("discard");close();check(!state.overlay&&parent.name!=="discard","Cancel discards");
+   edit(parent.id);type("discard");doc.dispatchEvent(new win.KeyboardEvent("keydown",{key:"Escape",bubbles:true}));
+   check(!state.overlay&&parent.name!=="discard","Escape discards");
+   edit(parent.id);type("discard");goBack(doc.querySelector("#page-scroll"));await refresh();
+   check(!state.overlay&&parent.name!=="discard","Back discards");
+   const name="מזון · Продукты · Household <food> & \"shop\" ".repeat(5).trim()+language+theme;
+   edit(parent.id);type("  "+name+"  ");save();await flush();
+   check(parent.name===name&&!state.overlay,"trimmed main rename");
+   check(doc.querySelector('[data-action="open-category"][data-id="'+parent.id+'"]').textContent===name,"management main name updates");
+   check([...doc.querySelectorAll(".category-row")].every(el=>el.scrollWidth<=el.clientWidth+1),"long management names fit 320px");
+   click('[data-action="open-category"][data-id="'+parent.id+'"]');
+   check(doc.querySelector("h1").textContent===name,"renamed parent navigation");
+   edit(child.id);
+   check(doc.querySelector('[role="dialog"]')&&doc.querySelector("#category-name").value===child.name,"child pencil opens dialog");
+   check(doc.querySelector('[data-action="confirm-rename-category"]').getBoundingClientRect().height>=48,"dialog save target");
+   type("   ");save();check(!doc.querySelector("#category-error").hidden,"child whitespace rejected");
+   type("discard child");close();check(child.name!=="discard child","child cancel");
+   edit(child.id);type("discard child");doc.dispatchEvent(new win.KeyboardEvent("keydown",{key:"Escape",bubbles:true}));check(child.name!=="discard child"&&!state.overlay,"child Escape");
+   edit(child.id);type("discard child");goBack(doc.querySelector("#page-scroll"));await refresh();check(child.name!=="discard child"&&!state.overlay,"child Back");
+   edit(child.id);type("  "+name+" child  ");save();await flush();
+   check(child.name===name+" child"&&doc.querySelector(".category-row-name").textContent===child.name,"child rename immediate");
+   check(categoryPath(child.id)===parent.name+" › "+child.name,"updated child path");
+   check(state.expenseDraft.categoryId===child.id&&state.pickerParentId===parent.id&&state.categoryManagementId===parent.id,"active IDs preserved");
+   const snap=snapshotFor(date);
+   check(snap.spent===original.spent&&snap.remaining===original.remaining&&snap.categoryBreakdown[0].expenseCount===2&&snap.categoryBreakdown[0].spent===35000,"amounts totals counts preserved");
+   check(JSON.stringify(previewModel.expenses)===records&&JSON.stringify(previewModel.categories.map(({id,parentId})=>({id,parentId})))===relationships,"assignments and hierarchy unchanged");
+   state.page=0;await refresh();click('[data-action="expense"]');
+   check(doc.querySelector('[data-action="open-expense-category"][data-id="'+parent.id+'"]').textContent===parent.name,"expense main choice updated");
+   click('[data-action="open-expense-category"][data-id="'+parent.id+'"]');
+   check(doc.querySelector("#picker-title").textContent===parent.name&&doc.querySelector('[data-action="choose-category"]').textContent===child.name,"expense child choice updated");close();close();
+   state.page=1;state.tab=0;state.expandedSummaryGroups.add("category:"+parent.id);await refresh();
+   check(doc.querySelector(".summary-group-card").textContent.includes(parent.name)&&doc.querySelector(".subcategory-section").parentElement.textContent.includes(child.name),"summary names updated");
+   for(const expense of [direct,sub]){
+    click('[data-action="view-expense"][data-id="'+expense.id+'"]');
+    check(doc.querySelector('[data-value="categoryId"]').textContent===categoryPath(expense.categoryId),"existing expense details updated");
+    close();
+   }
+   state.tab=2;await refresh();
+   check(doc.querySelector("#page").textContent.includes(categoryPath(child.id))&&doc.querySelectorAll(".summary-expense-row").length===2,"All Expenses updated paths and count");
+   check(doc.documentElement.dir===(language==="he"?"rtl":"ltr")&&doc.documentElement.dataset.theme===theme,"direction and theme");
+  }
+ }
+ check(renameCategory(other.id,parent.name)&&other.id!==parent.id,"duplicate names remain allowed");
+ check(!renameCategory("missing","Name")&&!renameCategory(child.id,"  "),"invalid model rename rejected");
+ out.textContent=results.join("\n")+"\nALL "+results.length+" PASSED";
+ document.documentElement.dataset.result="passed";
+ const visual=new URLSearchParams(location.search);
+ if(visual.has("visual")){
+  const lang=visual.get("lang")||"he";await loadLanguage(lang);state.language=lang;state.theme=visual.get("theme")||"light";
+  out.hidden=true;document.body.style.margin="0";frame.style="display:block;width:320px;height:720px;border:0";
+  await management(parent.id);edit(child.id);
+ }
+}catch(error){out.textContent=results.join("\n")+"\nFAIL "+error.stack;document.documentElement.dataset.result="failed";throw error}
+</script>

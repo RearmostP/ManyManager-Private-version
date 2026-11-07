@@ -92,6 +92,11 @@ class HomeLayoutTest {
                     screen.onActivity { activity ->
                         val title = home.findViewById<View>(R.id.homeTitle)
                         val add = home.findViewById<View>(R.id.addExpense)
+                        val buttonPixels = Bitmap.createBitmap(add.width, add.height, Bitmap.Config.ARGB_8888)
+                        add.draw(Canvas(buttonPixels))
+                        assertEquals("Purple add expense in both themes", 0xff7c3aed.toInt(),
+                            buttonPixels.getPixel((8 * add.resources.displayMetrics.density).toInt(), add.height / 2))
+                        buttonPixels.recycle()
                         val space = home.findViewById<View>(R.id.homeOrnamentSpace)
                         val card = home.findViewById<View>(R.id.homeSummaryCard)
                         val ornament = home.findViewById<ImageView>(R.id.homeOrnament)

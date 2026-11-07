@@ -143,6 +143,11 @@ class PersistentDataViewModel(private val repository: ManyManagerRepository) : V
         if (creation.value == null) creation.value = CategoryCreationState(fromExpense, parentId = parentId)
     }
 
+    fun beginCategoryRename(category: com.example.simple.manymanager.domain.Category) {
+        if (creation.value == null) creation.value = CategoryCreationState(
+            fromExpense = false, parentId = category.parentId, name = category.name, categoryId = category.id)
+    }
+
     fun restoreCategoryCreation(restored: CategoryCreationState) {
         if (creation.value == null) creation.value = restored
     }
@@ -166,10 +171,11 @@ class PersistentDataViewModel(private val repository: ManyManagerRepository) : V
 
     fun submitCategoryCreation(): Job? {
         val current = creation.value ?: return null
-        if (current.submitting || current.result is DataResult.Success) return null
+        if (current.submitting || current.interrupted || current.result is DataResult.Success) return null
         creation.value = current.copy(submitting = true, result = null, interrupted = false)
         return viewModelScope.launch {
-            val result = repository.createCategory(current.name, current.parentId)
+            val result = if (current.categoryId == null) repository.createCategory(current.name, current.parentId)
+                else repository.renameCategory(current.categoryId, current.name)
             currentCoroutineContext().ensureActive()
             creation.value = current.copy(result = result, interrupted = false)
         }

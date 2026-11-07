@@ -30,6 +30,7 @@ try{
   check(Math.abs((o.left+o.right-rect(".home").left-rect(".home").right)/2)<2,"Centered ornament in available content");
   check(o.top-b.bottom>=30&&c.top-o.bottom>=30,"Comfortable ornament spacing");
   check(b.height>=56,"Prominent action target");
+  check(style(".add-expense").backgroundColor==="rgb(124, 58, 237)"&&style(".add-expense").color==="rgb(255, 255, 255)","Purple Add expense with white label");
   check(style(".home-spending .money").fontSize==="17px"&&style(".home-spending .money").fontWeight===style(".budget-toggle .money").fontWeight,"Understated matching amount typography");
   check(style(".home-ornament").backgroundColor===(theme==="light"?"rgb(116, 121, 128)":"rgb(166, 171, 179)"),"Theme color updates");
   check(d.querySelector(".home-ornament-space").getAttribute("aria-hidden")==="true"&&!d.querySelector(".home-ornament").hasAttribute("tabindex"),"Decorative and unfocusable");
