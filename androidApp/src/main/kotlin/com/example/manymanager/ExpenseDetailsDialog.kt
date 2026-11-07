@@ -58,7 +58,7 @@ class ExpenseDetailsDialog(
     private val header = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     private val close = action(R.string.close, R.id.closeExpenseDetails)
     private val title = text(R.id.expenseDetailsTitle, 22f).apply {
-        setText(R.string.expense_details)
+        text = activity.calculatorTitle(activity.getString(R.string.expense_details))
         setTypeface(null, android.graphics.Typeface.BOLD)
         isAccessibilityHeading = true
     }

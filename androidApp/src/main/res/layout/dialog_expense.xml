@@ -43,6 +43,10 @@
                 android:src="@drawable/ic_close"
                 android:contentDescription="@string/close" />
         </LinearLayout>
+        <TextView android:id="@+id/expenseCalculatorLabel" style="@style/Text"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/main_calculator" android:textSize="14sp" android:paddingBottom="12dp"
+            android:accessibilityHeading="true" />
         <TextView
             style="@style/Text"
             android:layout_width="match_parent"

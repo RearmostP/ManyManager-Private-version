@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/homeSummaryCard"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/card" android:elevation="2dp"
+        android:paddingStart="20dp" android:paddingEnd="20dp"
+        android:paddingTop="18dp" android:paddingBottom="12dp">
+        <TextView android:id="@+id/homeCalculatorLabel" style="@style/Text"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/main_calculator" android:textSize="14sp" android:textStyle="bold"
+            android:accessibilityHeading="true" android:layout_marginBottom="6dp" />
+        <TextView android:id="@+id/homeMonth" style="@style/Text"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" android:textSize="14sp" android:textColor="@color/muted" />
+
+        <com.example.simple.manymanager.HomeSummaryRow
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="52dp" android:paddingTop="12dp" android:paddingBottom="12dp">
+            <TextView style="@style/Text"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/monthly_total" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:id="@+id/homeTotal" style="@style/Text"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/amount_zero" android:textSize="17sp"
+                android:textDirection="ltr" android:textStyle="bold" />
+        </com.example.simple.manymanager.HomeSummaryRow>
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/line" />
+
+        <com.example.simple.manymanager.HomeSummaryRow android:id="@+id/homeBudgetArea"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="52dp" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
+            <TextView style="@style/Text"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/remaining_budget" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:id="@+id/homeBudgetRemaining" style="@style/Text"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="17sp" android:textDirection="ltr" android:textStyle="bold" />
+            <ImageView android:id="@+id/budgetChevron"
+                android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" android:contentDescription="@null"
+                android:importantForAccessibility="no" />
+        </com.example.simple.manymanager.HomeSummaryRow>
+
+        <LinearLayout android:id="@+id/budgetBreakdown"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:visibility="gone">
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/line" android:layout_marginBottom="14dp" />
+            <com.example.simple.manymanager.HomeSummaryRow
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingBottom="10dp">
+                <TextView style="@style/Text"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/total_budget_for_month" android:textSize="14sp" android:textColor="@color/muted" />
+                <TextView android:id="@+id/homeBudgetTotal" style="@style/Text"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:textSize="14sp" android:textDirection="ltr" android:textColor="@color/muted" />
+            </com.example.simple.manymanager.HomeSummaryRow>
+            <LinearLayout android:id="@+id/budgetBreakdownRows"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </LinearLayout>

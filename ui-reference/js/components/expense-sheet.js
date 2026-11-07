@@ -4,7 +4,7 @@ import {parseCivilDate} from "../budget-period.js";
 
 export function canSaveExpense(){
  const draft=state.expenseDraft;
- return parseAmount(draft.amount)>0&&parseCivilDate(draft.date)!==null&&previewModel.sources.some(item=>item.id===draft.sourceId)&&isValidCategory(draft.categoryId);
+ return (!draft.calculatorId||draft.calculatorId===previewModel.calculatorId)&&parseAmount(draft.amount)>0&&parseCivilDate(draft.date)!==null&&previewModel.sources.some(item=>item.id===draft.sourceId)&&isValidCategory(draft.categoryId);
 }
 import {icon} from "../icons.js";
 import {tr,escapeValue} from "../render-helpers.js";

@@ -1,4 +1,7 @@
 {
+  "main_calculator": "מחשבון ראשי",
+  "second_calculator": "מחשבון שני",
+  "second_calculator_management": "ניהול המחשבון השני",
   "rename_category": "שינוי שם קטגוריה",
   "rename_category_label": "שינוי שם הקטגוריה %1$s",
   "rename_subcategory_label": "שינוי שם תת־הקטגוריה %1$s",

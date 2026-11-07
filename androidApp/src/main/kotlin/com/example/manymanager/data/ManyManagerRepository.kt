@@ -27,8 +27,15 @@ class ManyManagerRepository(
     private val initialization: Deferred<Result<CalculatorEntity>>,
     private val clock: Clock,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val selectedCalculatorId: String? = null,
 ) {
     private val dao get() = database.dao()
+
+    /** Immutable scope: every observation, form owner and mutation stays on this calculator. */
+    fun forCalculator(id: String): ManyManagerRepository {
+        require(id == ManyManagerDao.LOCAL_CALCULATOR_ID || id == ManyManagerDao.SECOND_CALCULATOR_ID)
+        return ManyManagerRepository(database, initialization, clock, dispatcher, id)
+    }
 
     suspend fun currentPeriod(): DataResult<BudgetPeriod> =
         execute { resolvePeriod(it, null) }
@@ -199,10 +206,11 @@ class ManyManagerRepository(
 
     private suspend fun initializedCalculatorId(): String {
         try {
-            return initialization.await().getOrElse { cause ->
+            val initialized = initialization.await().getOrElse { cause ->
                 if (cause is CancellationException) throw cause
                 reject(DataError.InitializationFailure(cause))
             }.id
+            return selectedCalculatorId ?: initialized
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (rejected: Rejected) {
@@ -217,7 +225,7 @@ class ManyManagerRepository(
             try {
                 val id = initializedCalculatorId()
                 DataResult.Success(database.withTransaction {
-                    val calculator = dao.calculator(id)
+                    val calculator = (if (id == ManyManagerDao.SECOND_CALCULATOR_ID) dao.initializeSecondCalculator() else dao.calculator(id))
                         ?: reject(DataError.MissingEntity(EntityKind.CALCULATOR, id))
                     block(calculator)
                 })

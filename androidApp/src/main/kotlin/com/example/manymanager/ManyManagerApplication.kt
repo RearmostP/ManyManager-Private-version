@@ -37,7 +37,7 @@ open class ManyManagerApplication : Application() {
         super.onCreate()
         databaseInitialization = applicationScope.async {
             try {
-                Result.success(database.dao().initializeLocalCalculator())
+                Result.success(database.dao().initializeCalculators())
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {

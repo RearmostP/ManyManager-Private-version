@@ -55,6 +55,7 @@ class ExpenseSheetDialog(
     init {
         val dialog = this
         val content = layoutInflater.inflate(R.layout.dialog_expense, null)
+        content.findViewById<TextView>(R.id.expenseCalculatorLabel).text = activity.calculatorName()
         // The transparent window fills the screen; only the sheet wraps its content.
         // FrameLayout constrains long forms to the available height and anchors them below.
         host = FrameLayout(context).apply {

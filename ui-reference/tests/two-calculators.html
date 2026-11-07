@@ -1,0 +1,142 @@
+<!doctype html><meta charset="utf-8"><base href="../"><title>Two independent calculators</title>
+<pre id="results">Running…</pre>
+<script type="module">
+import {calculatorIds,calculatorModel,MAIN_CALCULATOR,SECOND_CALCULATOR,setPreviewCalculator} from "../js/preview-model.js";
+import {periodFor,civilDate,adjacentPeriod} from "../js/budget-period.js";
+const results=[],out=document.querySelector("#results");
+const check=(value,label)=>{if(!value)throw Error(label);results.push("PASS "+label)};
+const pause=()=>new Promise(r=>setTimeout(r,25));
+const wait=async fn=>{const end=performance.now()+15000;while(!fn()){if(performance.now()>end)throw Error("timeout");await pause()}};
+try{
+ const main=calculatorModel(MAIN_CALCULATOR),second=calculatorModel(SECOND_CALCULATOR);
+ check(calculatorIds.length===2&&calculatorModel(SECOND_CALCULATOR)===second,"exactly two stable initialized scopes");
+ let invalid=false;try{calculatorModel("third")}catch{invalid=true}check(invalid,"no third calculator");
+ check(second.previewModel.categories.length===0&&second.previewModel.sources.length===0&&second.previewModel.expenses.length===0&&second.previewModel.budgets.size===0,"second starts empty");
+ const date=new Date(2026,10,10),before=new Date(2026,10,9);
+ const cat=main.addCategory("Main"),method=main.addSource("Main cash"),other=second.addCategory("Second"),child=second.addCategory("Child",other.id),otherMethod=second.addSource("Second cash");
+ main.setBudget(date,2000000);second.setBudget(date,50000);
+ const input={amountMinor:10000,date:"2026-11-10",sourceId:method.id,categoryId:cat.id};
+ const a=main.createExpense(input),b=second.createExpense({...input,amountMinor:2500,sourceId:otherMethod.id,categoryId:child.id});
+ const unchanged=JSON.stringify(main.snapshotFor(date));
+ check(a.calculatorId===MAIN_CALCULATOR&&b.calculatorId===SECOND_CALCULATOR,"expense ownership captured");
+ check(main.snapshotFor(date).remaining===1990000&&second.snapshotFor(date).remaining===47500,"independent budgets and totals");
+ check(!main.createExpense({...input,sourceId:otherMethod.id})&&!second.createExpense({...input,categoryId:other.id}),"foreign payment methods rejected");
+ check(!main.createExpense({...input,categoryId:child.id})&&!second.createExpense({...input,sourceId:otherMethod.id}),"foreign categories rejected");
+ check(!second.createExpense({...input,sourceId:otherMethod.id,categoryId:null}),"main-category choice mandatory");
+ check(!main.addCategory("Foreign",other.id)&&!second.addCategory("Foreign",cat.id),"foreign subcategory parents rejected");
+ check(!main.renameCategory(other.id,"Wrong")&&!second.updateSource(method.id,"Wrong")&&!main.deleteExpense(b.id),"foreign mutations rejected");
+ check(!second.updateExpense(b.id,{...b,categoryId:cat.id})&&!main.updateExpense(a.id,{...a,sourceId:otherMethod.id}),"foreign references rejected on edit");
+ check(second.renameCategory(other.id,"Renamed parent")&&second.renameCategory(child.id,"Renamed child")&&second.categoryPath(child.id)==="Renamed parent › Renamed child","scoped parent and child renames");
+ check(second.updateSource(otherMethod.id,"Renamed method")&&b.sourceId===otherMethod.id&&b.categoryId===child.id,"rename preserves assignments");
+ check(second.updateExpense(b.id,{...b,amountMinor:3500,date:"2026-11-09"}),"second expense moves between periods");
+ check(second.snapshotFor(date).spent===0&&second.snapshotFor(before).remaining===-3500,"only second periods recalculate");
+ check(second.totalFor(adjacentPeriod(date,1))===0&&main.totalFor(adjacentPeriod(date,1))===0,"new budgets start zero without carry-over");
+ second.setBudget(before,9000);
+ check(second.snapshotFor(before).remaining===5500&&main.totalFor(before)===0,"historical budgets independent");
+ check(second.deleteExpense(b.id)&&second.snapshotFor(before).spent===0,"second deletion");
+ check(JSON.stringify(main.snapshotFor(date))===unchanged,"all second mutations preserve main snapshot");
+ setPreviewCalculator(SECOND_CALCULATOR);
+ check(main.renameCategory(cat.id,"Main renamed")&&second.previewModel.categories[0].name==="Renamed parent","immutable API scope ignores selected renderer scope");
+
+ const frame=document.createElement("iframe");frame.src="index.html";frame.style="width:320px;height:850px";document.body.append(frame);
+ await wait(()=>frame.contentDocument?.querySelector('[data-action="expense"]'));
+ const doc=frame.contentDocument,win=frame.contentWindow;
+ const m=await win.eval('import("./js/preview-model.js")');
+ const {state}=await win.eval('import("./js/state.js")');
+ const {t}=await win.eval('import("./js/i18n.js")');
+ const first=m.calculatorModel(m.MAIN_CALCULATOR),next=m.calculatorModel(m.SECOND_CALCULATOR);
+ const today=new Date(),period=periodFor(today);
+ const mainCategory=first.addCategory("MAIN food"),mainMethod=first.addSource("MAIN cash");
+ first.setBudget(today,2000000);
+ first.createExpense({amountMinor:10000,date:civilDate(today),sourceId:mainMethod.id,categoryId:mainCategory.id});
+ await pause();
+ const click=s=>{const el=doc.querySelector(s);if(!el)throw Error("Missing "+s);el.click()};
+ const type=(s,value)=>{const el=doc.querySelector(s);el.value=value;el.dispatchEvent(new win.Event("input",{bubbles:true}))};
+ const nav=i=>{click("#menu-button");click('[data-action="navigate"][data-index="'+i+'"]')};
+ const page=i=>click('[data-action="calculator-page"][data-index="'+i+'"]');
+ const close=()=>click('[data-action="close-overlay"]');
+ const homeButton=id=>'[data-action="expense"][data-calculator="'+id+'"]';
+ const card=id=>doc.querySelector('.home-card[data-calculator="'+id+'"]');
+ const mainRecords=JSON.stringify(first.previewModel.expenses);
+ check(doc.querySelectorAll(".home-expense-actions .add-expense").length===2&&doc.querySelectorAll(".home-card").length===2,"two home actions and summaries");
+ click(homeButton(m.SECOND_CALCULATOR));
+ check(state.operationCalculatorId===m.SECOND_CALCULATOR&&doc.querySelector(".sheet > .calculator-context").textContent===t("he","second_calculator"),"second button captures visible destination");
+ check(doc.querySelector("[data-category-empty]")&&doc.querySelector('[data-action="save-expense"]').disabled&&!doc.querySelector('[data-action="expense-source"]'),"second has no main choices and cannot save empty");
+ type("#amount","25");type("#expense-note","Discard second");close();
+ check(next.previewModel.expenses.length===0&&first.previewModel.expenses.length===1,"second cancellation preserves both calculators");
+ nav(5);
+ check(state.calculatorId===m.SECOND_CALCULATOR&&doc.querySelector("h1").textContent===t("he","second_calculator_management"),"second management menu opens own hub");
+ page(4);click('[data-action="add-category"]');type("#category-name","SECOND food");click('[data-action="confirm-category"]');
+ const parent=next.previewModel.categories[0];
+ check(parent&&first.previewModel.categories.length===1,"category creation only second");
+ click('[data-action="open-category"]');click('[data-action="add-category"]');type("#category-name","SECOND shop");click('[data-action="confirm-category"]');
+ const nested=next.previewModel.categories.find(c=>c.parentId===parent.id);
+ click('[data-action="edit-category"]');type("#category-name","SECOND renamed child");click('[data-action="confirm-rename-category"]');
+ click('[data-action="back"]');click('[data-action="edit-category"]');type("#category-name","SECOND renamed parent");click('[data-action="confirm-rename-category"]');
+ check(next.categoryPath(nested.id)==="SECOND renamed parent › SECOND renamed child"&&first.previewModel.categories[0].name==="MAIN food","management renames retain scoped hierarchy");
+ nav(5);page(3);click('[data-action="add-source"]');type("#source-name","SECOND card");click('[data-action="confirm-add-source"]');
+ const payment=next.previewModel.sources[0];
+ click('[data-action="edit-source"]');type("#source-name","SECOND renamed card");click('[data-action="confirm-edit-source"]');
+ click('[data-action="edit-budget"]');type("#period-budget","500");click('[data-action="confirm-budget"]');
+ check(next.totalFor(today)===50000&&first.totalFor(today)===2000000&&first.previewModel.sources[0].name==="MAIN cash","budget and method management scoped");
+ nav(0);click(homeButton(m.SECOND_CALCULATOR));
+ type("#amount","25");type("#expense-note","Keep second");
+ check(doc.querySelectorAll('[data-action="expense-source"]').length===1&&doc.querySelector('[data-action="expense-source"]').textContent==="SECOND renamed card","only second payment choices");
+ check(!doc.querySelector('[data-action="open-expense-category"][data-id="'+mainCategory.id+'"]'),"only second category choices");
+ click('[data-action="expense-source"]');click('[data-action="open-expense-category"]');click('[data-action="choose-category"]');
+ check(state.expenseDraft.categoryId===nested.id&&state.operationCalculatorId===m.SECOND_CALCULATOR,"picker keeps second draft identity");
+ // Deliberately change the renderer's model scope; saving must still use the captured operation.
+ m.setPreviewCalculator(m.MAIN_CALCULATOR);
+ click('[data-action="save-expense"]');await pause();
+ const expense=next.previewModel.expenses[0];
+ check(expense?.calculatorId===m.SECOND_CALCULATOR&&expense.categoryId===nested.id&&expense.sourceId===payment.id,"save uses captured second identity");
+ check(JSON.stringify(first.previewModel.expenses)===mainRecords&&first.snapshotFor(today).spent===10000&&next.snapshotFor(today).spent===2500,"home save updates only second");
+ check(card(m.MAIN_CALCULATOR).querySelector(".home-spending .money").textContent.includes("100")&&card(m.SECOND_CALCULATOR).querySelector(".home-spending .money").textContent.includes("25"),"both home summaries refresh");
+ nav(5);page(1);
+ check(doc.querySelectorAll(".summary-expense-row").length===1&&doc.querySelector("#page").textContent.includes(next.categoryPath(nested.id))&&!doc.querySelector("#page").textContent.includes("MAIN cash"),"second expense list is scoped");
+ click('[data-action="view-expense"]');
+ check(doc.querySelector('[data-value="categoryId"]').textContent===next.categoryPath(nested.id)&&doc.querySelector("#expense-details > .calculator-context").textContent===t("he","second_calculator"),"second details show own path and calculator");
+ click('[data-action="begin-expense-edit"]');type("#details-note","Discard edit");click('[data-action="cancel-expense-edit"]');
+ check(expense.note==="Keep second"&&state.operationCalculatorId===m.SECOND_CALCULATOR,"cancel edit retains second saved values");
+ click('[data-action="begin-expense-edit"]');type("#details-amount","30");
+ type("#details-date",civilDate(new Date(period.start.getFullYear(),period.start.getMonth(),period.start.getDate()-1)));
+ click('[data-action="save-expense-details"]');await pause();
+ check(next.snapshotFor(today).spent===0&&first.snapshotFor(today).spent===10000&&expense.amountMinor===3000,"second edit and period move isolated");
+ click('[data-action="begin-expense-edit"]');click('[data-action="delete-expense"]');click('[data-action="confirm-delete-expense"]');await pause();
+ check(next.previewModel.expenses.length===0&&JSON.stringify(first.previewModel.expenses)===mainRecords,"second deletion leaves main intact");
+ for(const lang of ["he","ru","en"]){
+  nav(2);if(!doc.querySelector('[data-action="language"]'))click('[data-action="toggle-setting"][data-key="language"]');
+  click('[data-action="language"][data-value="'+lang+'"]');await wait(()=>doc.documentElement.lang===lang);
+  for(const theme of ["light","dark"]){
+   nav(2);if(!doc.querySelector('[data-action="theme"]'))click('[data-action="toggle-setting"][data-key="theme"]');
+   click('[data-action="theme"][data-value="'+theme+'"]');nav(0);await pause();
+   const buttons=[...doc.querySelectorAll(".home-expense-actions .add-expense")];
+   check(buttons.every(b=>b.getBoundingClientRect().height>=72&&b.scrollWidth<=b.clientWidth+1),lang+" "+theme+" readable touch targets");
+   check(Math.abs(buttons[0].getBoundingClientRect().width-buttons[1].getBoundingClientRect().width)<1&&buttons[0].getBoundingClientRect().top===buttons[1].getBoundingClientRect().top,lang+" "+theme+" equal side-by-side actions");
+   check(buttons.every((b,i)=>b.textContent.includes(t(lang,i?"second_calculator":"main_calculator"))),lang+" "+theme+" localized button names");
+   check([...doc.querySelectorAll(".home-summary-row .money")].every(el=>win.getComputedStyle(el).fontSize==="17px"),lang+" "+theme+" compact amounts retained");
+   check(doc.documentElement.dir===(lang==="he"?"rtl":"ltr")&&doc.documentElement.scrollWidth<=320,lang+" "+theme+" direction and width");
+   click("#menu-button");
+   const entries=[...doc.querySelectorAll(".drawer-nav")];
+   const settings=entries.findIndex(e=>e.dataset.index==="2");
+   check(entries[settings+1].dataset.index==="5"&&entries[settings+1].textContent===t(lang,"second_calculator_management"),lang+" "+theme+" menu directly below Settings");
+   close();nav(5);page(4);click('[data-action="edit-category"]');type("#category-name","discard");
+   doc.dispatchEvent(new win.KeyboardEvent("keydown",{key:"Escape",bubbles:true}));
+   check(!state.overlay&&parent.name==="SECOND renamed parent",lang+" "+theme+" Escape cancels scoped rename");
+   click('[data-action="edit-category"]');type("#category-name","discard");
+   click('[data-action="close-overlay"]');
+   check(parent.name==="SECOND renamed parent"&&state.calculatorId===m.SECOND_CALCULATOR,lang+" "+theme+" Cancel retains calculator");
+  }
+ }
+ out.textContent=results.join("\n")+"\nALL "+results.length+" PASSED";
+ document.documentElement.dataset.result="passed";
+ const visual=new URLSearchParams(location.search);
+ if(visual.has("visual")){
+  out.hidden=true;document.body.style.margin="0";frame.style="display:block;width:320px;height:900px;border:0";
+  nav(2);if(!doc.querySelector('[data-action="language"]'))click('[data-action="toggle-setting"][data-key="language"]');
+  const lang=visual.get("lang")||"he";click('[data-action="language"][data-value="'+lang+'"]');await wait(()=>doc.documentElement.lang===lang);
+  nav(2);if(!doc.querySelector('[data-action="theme"]'))click('[data-action="toggle-setting"][data-key="theme"]');
+  click('[data-action="theme"][data-value="'+(visual.get("theme")||"light")+'"]');nav(0);
+ }
+}catch(error){out.textContent=results.join("\n")+"\nFAIL "+error.stack;document.documentElement.dataset.result="failed";throw error}
+</script>

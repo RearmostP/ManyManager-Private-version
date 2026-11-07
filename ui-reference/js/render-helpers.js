@@ -4,6 +4,7 @@ import {icon} from "./icons.js";
 import {periodFor,lastDate} from "./budget-period.js";
 
 export const tr=(key,...args)=>t(state.language,key,...args);
+export const calculatorName=(id=state.calculatorId)=>tr(id==="second-calculator"?"second_calculator":"main_calculator");
 export const money=(cents=0)=>tr("ils_amount",new Intl.NumberFormat(
   state.language==="he"?"he-IL":state.language==="ru"?"ru-RU":"en-US",
   {minimumFractionDigits:0,maximumFractionDigits:2}

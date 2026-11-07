@@ -1,4 +1,7 @@
 {
+  "main_calculator": "Основной калькулятор",
+  "second_calculator": "Второй калькулятор",
+  "second_calculator_management": "Управление вторым калькулятором",
   "rename_category": "Переименовать категорию",
   "rename_category_label": "Переименовать категорию %1$s",
   "rename_subcategory_label": "Переименовать подкатегорию %1$s",

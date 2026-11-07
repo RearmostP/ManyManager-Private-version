@@ -2,12 +2,14 @@ import {adjacentPeriod,civilDate,periodFor} from "./budget-period.js";
 import {state,changePage,goBack,closeOverlay,cancelExpenseEdit,savedExpenseDraft} from "./state.js";
 import {loadLanguage,t,shortDate} from "./i18n.js";
 import {icon} from "./icons.js";
-import {previewModel,addSource,updateSource,setBudget,totalFor,parseAmount,createExpense,updateExpense,deleteExpense,observePreview} from "./preview-model.js";
+import {MAIN_CALCULATOR,SECOND_CALCULATOR,setPreviewCalculator,previewModel,addSource,updateSource,setBudget,totalFor,parseAmount,createExpense,updateExpense,deleteExpense,observePreview} from "./preview-model.js";
 import {home} from "./screens/home.js";
 import {summary} from "./screens/summary.js";
 import {budget} from "./screens/budget.js";
 import {settings} from "./screens/settings.js";
 import {categories} from "./screens/categories.js";
+import {secondCalculator} from "./screens/second-calculator.js";
+import {calculatorName,escapeValue} from "./render-helpers.js";
 import {drawer} from "./components/drawer.js";
 import {expense,canSaveExpense} from "./components/expense-sheet.js";
 import {expenseDelete} from "./components/expense-delete.js";
@@ -25,6 +27,7 @@ const menuButton=document.getElementById("menu-button");
 const translate=key=>t(state.language,key);
 
 function render(){
+  setPreviewCalculator(state.calculatorId);
   state.currentDate=new Date();
   document.documentElement.lang=state.language;
   document.documentElement.dir=state.language==="he"?"rtl":"ltr";
@@ -32,7 +35,9 @@ function render(){
   document.title=translate("app_name");
   menuButton.setAttribute("aria-label",translate("menu_button_label"));
   menuButton.innerHTML=icon("menu");
-  page.innerHTML=[home,summary,settings,budget,categories][state.page]();
+  page.innerHTML=[home,summary,settings,budget,categories,secondCalculator][state.page]();
+  if(state.page!==0)page.insertAdjacentHTML("afterbegin",'<p class="calculator-context">'+escapeValue(calculatorName())+'</p>');
+  setPreviewCalculator(state.overlay&&state.overlay!=="menu"?state.operationCalculatorId:state.calculatorId);
   if(["expense-details","delete-expense"].includes(state.overlay)||(state.overlay==="category-picker"&&state.pickerReturnOverlay==="expense-details")){
     if(!overlay.querySelector("#expense-details"))overlay.innerHTML=expenseDetails();
     const panel=overlay.querySelector("#expense-details");
@@ -49,6 +54,10 @@ function render(){
     menu:drawer,expense,"add-category":categoryDialog,"edit-category":categoryDialog,"category-picker":categoryPicker,
     "add-source":sourceDialog,"edit-source":sourceDialog,"edit-budget":budgetDialog
   })[state.overlay]?.()??"";
+  overlay.querySelectorAll(".dialog-panel,.sheet").forEach(panel=>{
+    panel.querySelector(":scope > .calculator-context")?.remove();
+    panel.insertAdjacentHTML("afterbegin",'<p class="calculator-context">'+escapeValue(calculatorName(state.operationCalculatorId))+'</p>');
+  });
   app.inert=Boolean(state.overlay);
   scroll.style.overflow=state.overlay?"hidden":"auto";
 }
@@ -71,6 +80,7 @@ render();
 observePreview(()=>renderKeepScroll());
 
 document.addEventListener("input",event=>{
+  setPreviewCalculator(state.overlay?state.operationCalculatorId:state.calculatorId);
   if(event.target.dataset.details && state.expenseEditing){
     const key=event.target.dataset.details;
     state.expenseDraft[key]=["categoryId","sourceId"].includes(key)?(event.target.value||null):event.target.value;
@@ -100,11 +110,21 @@ document.addEventListener("click",async event=>{
   const button=event.target.closest("[data-action]");
   if(!button||(app.inert&&app.contains(button)))return;
   if(button.classList.contains("scrim")&&event.target.closest("[data-stop-close]"))return;
+  if(!state.overlay||state.overlay==="menu")state.operationCalculatorId=state.calculatorId;
+  setPreviewCalculator(state.overlay&&state.overlay!=="menu"?state.operationCalculatorId:state.calculatorId);
   switch(button.dataset.action){
     case "close-overlay":
       closeOverlay();renderKeepScroll();break;
-    case "navigate":
-      changePage(Number(button.dataset.index),scroll);state.overlay=null;render();break;
+    case "navigate":{
+      const index=Number(button.dataset.index);
+      changePage(index,scroll,index===5?SECOND_CALCULATOR:MAIN_CALCULATOR);state.overlay=null;render();break;
+    }
+    case "calculator-page":{
+      const index=Number(button.dataset.index);
+      changePage(index,scroll,SECOND_CALCULATOR);
+      if(index===1)state.tab=2;
+      state.overlay=null;render();break;
+    }
     case "back":
       if(goBack(scroll))renderKeepScroll();break;
     case "edit-category":
@@ -173,9 +193,11 @@ document.addEventListener("click",async event=>{
     case "expense-source":
       state.expenseDraft.sourceId=button.dataset.id;renderKeepScroll();break;
     case "expense":
+      state.operationCalculatorId=button.dataset.calculator??state.calculatorId;
+      setPreviewCalculator(state.operationCalculatorId);
       state.expenseEditId=null;state.expenseOriginal=null;state.expenseEditing=false;state.expenseDetailsError=null;
       state.overlay="expense";
-      state.expenseDraft={amount:"",date:civilDate(state.currentDate),note:"",categoryId:null,sourceId:null};
+      state.expenseDraft={calculatorId:state.operationCalculatorId,amount:"",date:civilDate(state.currentDate),note:"",categoryId:null,sourceId:null};
       renderKeepScroll();break;
     case "save-expense":{
       if(!canSaveExpense())break;
@@ -233,7 +255,9 @@ document.addEventListener("click",async event=>{
       break;
     }
     case "budget-toggle":
-      state.budgetExpanded=!state.budgetExpanded;renderKeepScroll();break;
+      if(button.dataset.calculator===SECOND_CALCULATOR)state.secondBudgetExpanded=!state.secondBudgetExpanded;
+      else state.budgetExpanded=!state.budgetExpanded;
+      renderKeepScroll();break;
     case "tab":
       state.tab=Number(button.dataset.index);renderKeepScroll();break;
     case "budget-prev":

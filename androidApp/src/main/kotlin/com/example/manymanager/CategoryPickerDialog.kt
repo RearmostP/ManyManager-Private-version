@@ -61,7 +61,7 @@ class CategoryPickerDialog(
     private fun confirm(id: String) { dialog.dismiss(); onSelect(id) }
     private fun render() {
         val parent = categories.firstOrNull { it.id == parentId && it.parentId == null }
-        heading.text = parent?.name ?: context.getString(R.string.expense_category)
+        heading.text = context.calculatorTitle(parent?.name ?: context.getString(R.string.expense_category))
         rows.removeAllViews()
         val options = categories.filter { it.parentId == parent?.id }
         if (options.isEmpty()) rows.addView(TextView(context).apply {

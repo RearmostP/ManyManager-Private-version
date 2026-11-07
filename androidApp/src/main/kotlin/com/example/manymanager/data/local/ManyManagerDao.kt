@@ -22,6 +22,20 @@ abstract class ManyManagerDao {
         return checkNotNull(calculator(LOCAL_CALCULATOR_ID))
     }
 
+    /** Fixed identities make retries, concurrent opens and restarts reuse the same two records. */
+    @Transaction
+    open suspend fun initializeCalculators(): CalculatorEntity {
+        val main = initializeLocalCalculator()
+        initializeSecondCalculator()
+        return main
+    }
+
+    @Transaction
+    open suspend fun initializeSecondCalculator(): CalculatorEntity {
+        insertCalculatorIfAbsent(CalculatorEntity(SECOND_CALCULATOR_ID))
+        return checkNotNull(calculator(SECOND_CALCULATOR_ID))
+    }
+
     // ABORT is intentional: these are inserts, never silent replacement of existing facts.
     @Insert abstract suspend fun insertCategory(category: CategoryEntity)
     @Insert abstract suspend fun insertSource(source: BudgetSourceEntity)
@@ -74,5 +88,6 @@ abstract class ManyManagerDao {
     companion object {
         /** Internal identity of the initial local calculator; never derived from a translated label. */
         const val LOCAL_CALCULATOR_ID = "local-calculator"
+        const val SECOND_CALCULATOR_ID = "second-calculator"
     }
 }

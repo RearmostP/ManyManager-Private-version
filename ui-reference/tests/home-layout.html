@@ -24,7 +24,7 @@ try{
  for(const width of [320,360])for(const height of [568,900])for(const language of ["he","en","ru"])for(const theme of ["light","dark"]){
   frame.style.width=width+"px";frame.style.height=height+"px";
   await loadLanguage(language);state.language=language;state.theme=theme;state.budgetExpanded=false;await refresh();
-  const h=rect(".home-title"),b=rect(".add-expense"),o=rect(".home-ornament"),c=rect(".home-card");
+  const h=rect(".home-title"),b=rect(".add-expense"),o=rect(".home-ornament"),c=rect(".home-summary-stack");
   check(h.bottom<=b.top&&b.bottom<o.top&&o.bottom<c.top,"Title, action, ornament, summary order");
   check(Math.abs(o.width/o.height-568/164)<.02,"Original ornament proportions");
   check(Math.abs((o.left+o.right-rect(".home").left-rect(".home").right)/2)<2,"Centered ornament in available content");

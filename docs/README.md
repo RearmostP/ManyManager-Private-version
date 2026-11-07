@@ -2,7 +2,19 @@
 
 This document describes `main` in `RearmostP/ManyManager-Private-version`, migrated with the full history of `original` from `RearmostP/ManyManager`. The personal edition remains on `main` in the old `RearmostP/ManyManager` repository; do not infer its behavior here. ManyManager Simple uses native Android XML/Views and AppCompat. `:androidApp` owns production data; `:shared` retains a Compose sample.
 
-## Single budget and payment methods
+## Two independent calculators
+
+The app provides exactly two user-visible calculators: Main calculator (`local-calculator`) and Second calculator (`second-calculator`). Existing records and settings stay on Main. Transactional insert-if-absent initialization preserves Main and idempotently adds Second with ILS and period start day 10. Second starts with zero budget and no categories, subcategories, payment methods or expenses. No examples or copies are inserted in production.
+
+All existing tables already use calculator-scoped keys and foreign keys; schema **3** and migrations 1→2→3 remain unchanged. No new schema migration is needed. `ManyManagerRepository.forCalculator` returns an immutable scope sharing the same database/clock. Reads, owned-reference validation, observations and all writes stay within that scope. Opening a second-calculator screen creates a separate MainActivity instance and ViewModel tied to that identity, rather than switching a repository underneath a pending operation. Activity saved state and its launch intent retain that identity across recreation. Budget/category/method/expense drafts, loading/errors and submissions therefore remain attached to their own calculator.
+
+Home has two equally sized purple expense buttons with localized calculator names and a comfortable gap. Each opens its own calculator's entry form, whose visible destination and offered categories/methods match the captured calculator. Selecting a child still stores one category ID and derives its main category; a category is required, a child is optional. The ornament stays between the actions and the lower summary stack. Both calculators have separate period/spending/remaining cards with 17sp bold amounts and their own budget expansion. Home observes and refreshes both active periods on resume/date/time/zone changes.
+
+The menu entry immediately below Settings is “ניהול המחשבון השני” / “Manage second calculator” / “Управление вторым калькулятором”. It opens a focused hub linking to the reused budget/payment-method screen, category/subcategory management, All Expenses and expense creation for Second. All existing menu entries continue to target Main. Calculator labels remain visible in management pages and forms/details/pickers. Back returns within the secondary flow, then to its caller; opening a main menu destination never reuses a secondary draft.
+
+Each calculator independently follows the existing 10th–9th period rules, zero budgets for new periods, no carry-over, exact money arithmetic, stable IDs and mandatory owned choices. Editing a date can move an expense between its own periods, never between calculators. Renaming never moves category children, expense assignments or money. The HTML preview has the same essential interaction using two independent in-memory model scopes; reload intentionally resets both.
+
+## Single budget per calculator and payment methods
 
 - Each calculator and budget period has one directly stored non-negative budget in exact integer `Long` minor units (agorot). There is no hidden budget source.
 - Remaining = period budget − every expense dated within that period. A ₪20,000 budget with ₪100 cash and ₪250 card spending leaves ₪19,650. The cash/card breakdown shows ₪100/₪250 and counts; methods have no allocations or balances.
@@ -10,7 +22,7 @@ This document describes `main` in `RearmostP/ManyManager-Private-version`, migra
 - Each expense requires a method, a positive exact amount and a civil date; a main category or actual subcategory is required for new expenses and saved edits; note remains optional. Historical null categories remain localized Uncategorized and stay in totals. Every reference belongs to the same calculator. Zero budgets and negative remaining balances are allowed.
 - The existing `BudgetPeriodCalculator` defines civil-date intervals `[start, endExclusive)`: by default the 10th through the 9th. Dates are epoch days, not UTC-midnight timestamps. Supported start days remain 1–28.
 - New periods start at zero budget, with no copying or carry-over. Methods remain available. Moving an expense across a period boundary recalculates both periods.
-- One local calculator initializes idempotently with start day 10 and ILS; business data starts empty. There is no calculator, currency or period-start settings UI.
+- Main and Second initialize idempotently with stable IDs; new calculators use start day 10 and ILS and empty business data. No calculator creation, currency or period-start settings UI is provided.
 - Decimal point/comma input accepts at most two fractional digits, with no floating-point money or silent rounding. Aggregations use `BigInteger`; final exposed totals must fit `Long`. Invalid totals roll back writes.
 
 ## Storage and migration
@@ -29,7 +41,7 @@ Registered `MIGRATION_2_3` adds nullable category parent IDs, a calculator-scope
 
 Budget Management retains period arrows and shows one total with an Update budget action. Its separate Payment methods section lists name-only rows with Add and Rename actions. The budget form captures the selected period; rollover does not redirect its save.
 
-Home shows the title/navigation, the prominent Add expense action, a centered decorative ornament and a compact summary toward the bottom of a tall viewport. The summary contains the period, spending and remaining amounts in matching 17sp bold type. Short windows, long labels and large amounts remain in normal scrolling flow. The ornament uses a transparent crop of the original reference, retains its proportions, follows light/dark colors and is excluded from focus/accessibility. Expanding the remaining row retains its chevron and shows total budget and spending by payment method. Summary retains All Expenses, Categories and Payment Methods with spending, counts and expandable inline expense rows in unified rounded cards. Methods without expenses are omitted from spending summaries.
+Home shows title/navigation, two side-by-side calculator-specific Add expense actions, a centered decorative ornament and separate compact summaries toward the bottom of a tall viewport. The summary contains the period, spending and remaining amounts in matching 17sp bold type. Short windows, long labels and large amounts remain in normal scrolling flow. The ornament uses a transparent crop of the original reference, retains its proportions, follows light/dark colors and is excluded from focus/accessibility. Expanding the remaining row retains its chevron and shows total budget and spending by payment method. Summary retains All Expenses, Categories and Payment Methods with spending, counts and expandable inline expense rows in unified rounded cards. Methods without expenses are omitted from spending summaries.
 
 Expense creation immediately shows a compact inline list of main categories in the form's normal scroll. A selected row shows a checkmark and the confirmed parent or parent/child path. Opening a parent lists only real children; choosing a child or the footer's Select main category confirms only the draft. Back/Cancel preserves the prior selection and every other draft field. Editing uses a separate two-level picker with the same confirmation rules. No Uncategorized, synthetic General or creation shortcuts appear in expense selection. With no main categories, a localized Category Management explanation appears and saving is disabled.
 
@@ -45,11 +57,11 @@ Home/Summary follow the active period independently of historical management sel
 
 ViewModel retains pending forms across ordinary recreation. Restored Bundle forms with uncertain submissions are locked against replay; close, inspect saved data and start a deliberate new operation. Bundle recovery is not durable draft recovery or exactly-once storage across arbitrary process death.
 
-No refunds/nonpositive expenses, cloud sync, accounts, multiple-calculator UI, historical Summary navigation, export or database encryption. Keep `allowBackup=true` without database exclusions. Actual backup/device transfer, API 30 runtime, manual TalkBack/large-font/physical-keyboard coverage and arbitrary process death during commit remain unverified.
+No refunds/nonpositive expenses, cloud sync, accounts, more than two calculator scopes in the UI, historical Summary navigation, export or database encryption. Keep `allowBackup=true` without database exclusions. Actual backup/device transfer, API 30 runtime, manual TalkBack/large-font/physical-keyboard coverage and arbitrary process death during commit remain unverified.
 
 ## Development and visual reference
 
-Keep Android and [ui-reference](../ui-reference/README.md) visually aligned, including essential states. The approved home design is implemented in both native XML/Views and HTML: Add expense above a decorative theme-aware ornament and a compact lower summary. Financial and expense-entry behavior is unchanged. Preview data stays in memory and resets on reload; do not reproduce production persistence/lifecycle. Fictional examples belong in `ui-reference/js/fixture.js`. Verify affected interactions.
+Keep Android and [ui-reference](../ui-reference/README.md) visually aligned, including essential states. The approved home design is implemented in both native XML/Views and HTML: two calculator expense actions above a decorative theme-aware ornament and two compact lower summaries. Financial and expense-entry behavior is unchanged. Preview data stays in memory and resets on reload; do not reproduce production persistence/lifecycle. Fictional examples belong in `ui-reference/js/fixture.js`. Verify affected interactions.
 
 With a compatible JDK, or Android Studio’s Gradle runner:
 
@@ -90,6 +102,20 @@ On 2026-11-08, Android Studio Gradle passed debug assembly, lint, 33 JVM tests a
 Instrumentation used the isolated target `com.manymanager.privateversion.renametest`, BudgetTestApplication's in-memory Room database, UUID file fixtures, test-prefixed preferences and leave-APKs-installed enabled. Tests cover name trimming, blank rejection, duplicate names, owned-record validation, preserved hierarchy/expenses/totals, real management pencils, Cancel/Back/Escape, draft recreation and uncertain restored submissions. Normal `com.manymanager.privateversion` was rebuilt, installed and launched successfully; its home screenshot confirms the purple action. Existing production packages were not cleared or uninstalled.
 
 Fresh Chrome headless profiles passed nine HTML pages: home-layout 557, category-renaming 194, subcategories 93, stage8 32, stage9 35, expense-details 65, summary-cards-checks 37, single-budget-ui 11 and stage6 14 (1,038 assertions). These results do not establish full manual accessibility, cross-browser parity, API 30 runtime or arbitrary process-death behavior.
+
+## Verification of two independent calculators
+
+On 2026-11-08, debug assembly, lint, all 33 JVM tests and test APK assembly passed. The complete Samsung-device instrumentation suite passed **83 tests**. New tests seed a populated old single-calculator database, initialize concurrently 20 times, verify exactly two rows and unchanged Main, then close/reopen the file with fresh repositories and verify both calculators' categories, methods, budgets and expenses. Schema 3 and all exported schemas remain unchanged; existing supported migration tests still pass.
+
+Repository checks reject foreign parent/category/method/expense IDs, require a category, retain ownership/hierarchy through renaming, isolate budgets and period moves/deletion, and observe independent snapshots. Real Activity tests exercise both home buttons, localized destination labels and owned choices; second-calculator draft recreation/save/cancellation; second category renaming; main snapshot preservation; separate Home refresh and rollover; menu order below Settings; and the actual second hub → budget/methods/category navigation. Narrow Home tests cover equal, separate 72dp action targets across Hebrew/English/Russian, both themes, 320dp widths and short/tall windows.
+
+The first new Activity run exposed test assumptions about a fake clock versus the form's explicitly chosen civil date, and about choices being ready as soon as the dialog heading appears. Tests now choose the intended period date and wait for loaded choices. All five focused new tests and the final full 83-test suite passed.
+
+Instrumentation used `com.manymanager.privateversion.renametest`, the isolated test Application's in-memory database, UUID-named file databases, test-prefixed preferences and leave-APKs-installed enabled. Production databases/preferences were not cleared or uninstalled. Normal `com.manymanager.privateversion` was rebuilt, installed and launched; its native Home was inspected. Package identity, signing, version and release publishing were not changed.
+
+Fresh Chrome headless profiles passed **1,137 assertions** across ten pages: two-calculators 87, home-layout 569, category-renaming 194, subcategories 93, stage8 32, stage9 35, expense-details 65, summary-cards-checks 37, single-budget-ui 11 and stage6 14. The new checks include attempts to redirect a second draft by changing renderer scope, cross-calculator references, scoped management/edits/deletion/period moves and six 320px locale/theme combinations. Hebrew light and Russian dark Home screenshots were inspected.
+
+File reopen and ordinary Activity recreation are verified; arbitrary process death during commit, actual OS backup/transfer, API 30 runtime, full manual TalkBack/keyboard/large-font coverage and Safari/Firefox compatibility remain unverified.
 
 ## Implementation map
 

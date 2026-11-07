@@ -4,6 +4,14 @@ Current behavior: [branch documentation](../docs/README.md). This preview follow
 
 This is a lightweight, in-memory design playground for the native Android XML/Views app. Reload resets all examples, drafts and appearance choices. It does not emulate Room, migrations or Android lifecycle guarantees.
 
+## Two calculators
+
+Exactly two fixed scopes are available: `local-calculator` (Main) and `second-calculator` (Second). Both start empty on normal preview load. Each has its own categories/children, methods, expenses and period budgets. `calculatorModel(id)` returns an immutable model API; it rejects unknown calculators and never follows a renderer scope change. The compatibility render proxy selects a scope explicitly, while each open operation captures its destination independently. Save, selection, cancellation and nested dialogs keep that captured destination. Foreign references/mutations are rejected and all existing exact-money/10th–9th/no-carry-over rules apply per scope.
+
+Two equal-width purple Home buttons identify Main and Second. The ornament is preserved, followed by separate compact 17px spending/remaining cards with independent expansion. The menu's new second-calculator management entry sits immediately below Settings and opens a hub for its budget/payment methods, categories/subcategories, expense list and Add expense. Existing menu entries manage Main. Each management page/form/details/picker shows its calculator. Category/subcategory and method creation/rename, expense details/edit/delete and period budget entry reuse existing components.
+
+Android persists both scopes in its existing schema 3 and preserves the original data. This preview stays in memory and does not emulate lifecycle/persistence. See the branch documentation for immutable repository/Activity scopes, initialization and verification.
+
 ## Run and examples
 
 From the repository root, serve `ui-reference` over HTTP:
@@ -18,7 +26,7 @@ The default starts empty. Fictional examples are in `js/fixture.js`; import it e
 
 ## Approved home layout
 
-The approved home-screen design is implemented in native Android XML/Views and this preview. Navigation/title come first, then the prominent purple (#7C3AED) Add expense action with white text in both themes, a centered decorative ornament, and a compact period summary toward the bottom of taller windows. Spending and remaining both use the previous remaining amount's 17px/700 typography. Remaining retains its chevron, expansion and payment-method spending breakdown. Short windows and expanded/long content scroll naturally without fixed-position controls.
+The approved home-screen design is implemented in native Android XML/Views and this preview. Navigation/title come first, then two equal-width purple (#7C3AED) calculator-specific Add expense actions with white text in both themes, a centered decorative ornament, and two compact period summaries toward the bottom of taller windows. Spending and remaining both use the previous remaining amount's 17px/700 typography. Remaining retains its chevron, expansion and payment-method spending breakdown. Short windows and expanded/long content scroll naturally without fixed-position controls.
 
 `assets/home-ornament.svg` embeds the supplied reference pixels in a cropped viewBox. A luminance-to-alpha filter removes white while retaining the original proportions and fine strokes. CSS uses the local SVG as a mask, tinted soft gray per theme immediately. The ornament is aria-hidden, unfocusable and has no surface, border, shadow or animation. Android uses a transparent 568×164 PNG made with the same crop/alpha transfer, a proportion-preserving image view and light/dark resource tints. Native HomeLayout.kt keeps the summary in normal scrolling flow and wraps amount rows when necessary.
 
@@ -32,7 +40,7 @@ Budget Management retains period arrows, the date range and total card, and offe
 
 Each period has one budget in integer minor units. Remaining is that budget minus the expenses dated in the period. The 10th starts a new period; the 9th ends the previous one. New periods have zero budgets and keep methods. Spending with zero budget or negative remaining is allowed.
 
-Home shows active-period spending and remaining; its expanded panel shows total budget and spending by payment method. Summary keeps category and payment-method spending/counts with expandable expense rows in unified rounded cards, plus All Expenses. Methods have no budgets or remaining balances.
+Home shows active-period spending and remaining for each calculator; each independently expanded panel shows that calculator's total budget and spending by payment method. Summary keeps category and payment-method spending/counts with expandable expense rows in unified rounded cards, plus All Expenses. Methods have no budgets or remaining balances.
 
 Each new or edited expense requires a payment method, a positive amount, a civil date and a category (main category or one of its subcategories). The note is optional. Create categories and subcategories through Category Management before opening expense creation. Details open read-only; Edit changes the same ID in place, Cancel discards the draft, Delete requires confirmation. Edits and deletion immediately recalculate totals, including moves across period boundaries. Renaming a method preserves expense references and spending.
 
@@ -54,6 +62,8 @@ For an interactive rename demonstration with short fictional names and two assig
 
 Serve the preview and open:
 
+- `tests/two-calculators.html`: model and real-UI checks for stable empty scopes, owned choices, independent budgets/expenses/renames/period moves/deletion, captured form identity, home summaries, menu order, and all six language/theme combinations at 320px. Add `?visual=home&lang=he&theme=light` for fictional test data left visible after checks.
+
 - `tests/category-renaming.html`: 194 checks passed in Chrome headless on 2026-11-07 across Hebrew/Russian/English and light/dark at 320px: main/child rename, whitespace validation, Cancel/Back/Escape, long escaped names, duplicate-name policy, unchanged stable IDs/relationships/expenses/totals/counts, and updated choices, paths, details and summaries.
 - `tests/subcategories.html`: inline creation list without creation shortcuts, normal form scrolling, required category, actual-child lists, parent footer confirmation, legacy data, draft preservation, stable IDs, exact totals, editing/deletion and 320px locale/theme layouts.
 - `tests/single-budget-ui.html`: real budget entry, name-only method forms, remaining balance and summaries.
@@ -70,5 +80,7 @@ Chrome headless passed all seven HTML check pages (287 assertions, including 93 
 Category rename verification on 2026-11-07: all eight check pages passed in fresh Chrome headless profiles (481 assertions: category-renaming 194, subcategories 93, stage8 32, stage9 35, expense-details 65, summary-cards-checks 37, single-budget-ui 11, stage6 14). The Hebrew dark rename dialog was visually inspected at 320px with a long mixed-language name. This does not establish full manual screen-reader coverage or cross-browser compatibility. Use `tests/category-renaming.html?visual=1&lang=he&theme=dark` to inspect the dialog; `en`, `ru` and `light` are supported too.
 
 Purple action/native follow-up verification on 2026-11-08: all nine HTML pages passed in fresh Chrome headless profiles (1,038 assertions, including 557 home-layout checks with the purple action in both themes). Android assembly/lint, 33 JVM tests, the 77-test device suite and six focused rename/home cases passed. The narrow rename case was repeated successfully after aligning test-dialog night modes. Native screenshots were inspected and the regular app was installed/launched without clearing production data. See docs/README.md for test isolation and limits.
+
+Two-calculator verification on 2026-11-08: all ten HTML pages passed in fresh Chrome headless profiles (1,137 assertions: two-calculators 87, home-layout 569 and the existing eight pages 481). Hebrew light and Russian dark 320px Home screenshots were inspected. Android assembly/lint, 33 JVM tests and the final complete 83-test device suite passed using isolated databases/preferences; populated file reopen and ordinary recreation are covered. The regular app was rebuilt, installed and launched with unchanged package/signing and without clearing production data. See docs/README.md for scope, exact checks and unverified lifecycle/accessibility/platform cases.
 
 Checks use only isolated memory. Historical result counts are not fresh verification; see the current task report for actual outcomes. Android additionally tests transactions, populated version-1 migration and overflow rollback. Keep this preview focused on visual behavior rather than reproducing production persistence or lifecycle.

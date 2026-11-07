@@ -71,7 +71,7 @@ class SideMenuDialog(
             setDecorFitsSystemWindows(false)
         }
 
-        listOf(R.id.nav0, R.id.nav1, R.id.nav2, R.id.nav3, R.id.nav4).forEachIndexed { index, id ->
+        listOf(R.id.nav0, R.id.nav1, R.id.nav2, R.id.nav3, R.id.nav4, R.id.nav5).forEachIndexed { index, id ->
             content.findViewById<View>(id).setOnClickListener {
                 if (!isDismissing) {
                     onNavigate(index)

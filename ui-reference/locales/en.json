@@ -1,4 +1,7 @@
 {
+  "main_calculator": "Main calculator",
+  "second_calculator": "Second calculator",
+  "second_calculator_management": "Manage second calculator",
   "rename_category": "Rename category",
   "rename_category_label": "Rename category %1$s",
   "rename_subcategory_label": "Rename subcategory %1$s",

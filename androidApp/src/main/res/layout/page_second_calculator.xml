@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    <TextView style="@style/Text" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/second_calculator_management" android:textSize="28sp" android:textStyle="bold"
+        android:accessibilityHeading="true" />
+    <TextView android:id="@+id/secondBudget" style="@style/Text" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/budget_management" android:layout_marginTop="20dp" android:padding="16dp"
+        android:minHeight="56dp" android:background="@drawable/button_secondary" android:clickable="true" android:focusable="true"/>
+    <TextView android:id="@+id/secondCategories" style="@style/Text" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/expense_categories" android:layout_marginTop="12dp" android:padding="16dp"
+        android:minHeight="56dp" android:background="@drawable/button_secondary" android:clickable="true" android:focusable="true"/>
+    <TextView android:id="@+id/secondExpenses" style="@style/Text" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/all_expenses" android:layout_marginTop="12dp" android:padding="16dp"
+        android:minHeight="56dp" android:background="@drawable/button_secondary" android:clickable="true" android:focusable="true"/>
+    <TextView android:id="@+id/secondAddExpense" style="@style/Text" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/add_expense" android:layout_marginTop="12dp" android:padding="16dp"
+        android:minHeight="56dp" android:background="@drawable/button_add_expense" android:textColor="@color/white"
+        android:clickable="true" android:focusable="true"/>
+</LinearLayout>

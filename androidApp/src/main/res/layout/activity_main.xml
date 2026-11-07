@@ -27,6 +27,10 @@
                 style="@style/IconButton"
                 android:src="@drawable/ic_menu"
                 android:contentDescription="@string/open_menu" />
+            <TextView android:id="@+id/activeCalculatorLabel" style="@style/Text"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/main_calculator" android:textSize="14sp" android:paddingStart="12dp"
+                android:visibility="gone" android:accessibilityHeading="true" />
         </LinearLayout>
         <ScrollView
             android:id="@+id/pageScroll"
@@ -65,6 +69,8 @@
                     <include
                         android:id="@+id/categoriesPage"
                         layout="@layout/page_categories"
+                        android:visibility="gone" />
+                    <include android:id="@+id/secondCalculatorPage" layout="@layout/page_second_calculator"
                         android:visibility="gone" />
                 </FrameLayout>
             </LinearLayout>

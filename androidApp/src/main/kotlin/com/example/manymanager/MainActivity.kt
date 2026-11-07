@@ -30,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.simple.manymanager.data.local.ManyManagerDao
 import com.example.simple.manymanager.domain.BudgetPeriod
 import com.example.simple.manymanager.domain.BudgetSource
 import com.example.simple.manymanager.domain.DataResult
@@ -46,9 +47,21 @@ class MainActivity : AppCompatActivity() {
         override fun handleOnBackPressed() { navigateBack() }
     }
     private val budgetState by lazy { ViewModelProvider(this)[BudgetViewModel::class.java] }
+    internal var calculatorId: String = ManyManagerDao.LOCAL_CALCULATOR_ID
+        private set
+    val calculatorDisplayName: String
+        get() = getString(if (calculatorId == ManyManagerDao.SECOND_CALCULATOR_ID)
+            R.string.second_calculator else R.string.main_calculator)
+    private val secondHomeViewModel by lazy {
+        ViewModelProvider(this, PersistentDataViewModelFactory(
+            (application as ManyManagerApplication).repository.forCalculator(ManyManagerDao.SECOND_CALCULATOR_ID)
+        ))["second-home", PersistentDataViewModel::class.java]
+    }
     private val persistentViewModel by lazy {
         ViewModelProvider(this, PersistentDataViewModelFactory(
-            (application as ManyManagerApplication).repository
+            (application as ManyManagerApplication).repository.let {
+                if (calculatorId == ManyManagerDao.SECOND_CALCULATOR_ID) it.forCalculator(calculatorId) else it
+            }
         ))[PersistentDataViewModel::class.java]
     }
     private val expandedSummaryGroups = mutableSetOf<String>()
@@ -61,6 +74,8 @@ class MainActivity : AppCompatActivity() {
     private var sourceCreationDialog: SourceCreationDialog? = null
     private var sourceEditingDialog: SourceEditingDialog? = null
     private var homeBudgetUi: BudgetHomeUi? = null
+    private var secondHomeUi: BudgetHomeUi? = null
+    private var secondExpanded = false
     private var budgetManagementUi: BudgetManagementUi? = null
     private var categoryManagementUi: CategoryManagementUi? = null
     private var page = 0
@@ -80,6 +95,9 @@ class MainActivity : AppCompatActivity() {
         dark = preferences.dark
         delegate.localNightMode = if (dark) AppCompatDelegate.MODE_NIGHT_YES
             else AppCompatDelegate.MODE_NIGHT_NO
+        calculatorId = (savedInstanceState?.getString("calculatorId") ?: intent.getStringExtra("calculatorId"))
+            .takeIf { it == ManyManagerDao.SECOND_CALCULATOR_ID } ?: ManyManagerDao.LOCAL_CALCULATOR_ID
+        secondExpanded = savedInstanceState?.getBoolean("secondExpanded") ?: false
         super.onCreate(savedInstanceState)
         if (AppCompatDelegate.getApplicationLocales().isEmpty) {
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("he"))
@@ -89,6 +107,7 @@ class MainActivity : AppCompatActivity() {
             persistentViewModel.selectPeriod(BudgetPeriod(LocalDate.ofEpochDay(it[0]), LocalDate.ofEpochDay(it[1])))
         }
         renderContent(savedInstanceState)
+        if (savedInstanceState == null && intent.getBooleanExtra("openExpense", false)) showExpense()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { persistentViewModel.state.collect(::renderPersistentDataState) }
@@ -100,6 +119,8 @@ class MainActivity : AppCompatActivity() {
                 launch { persistentViewModel.sourceEditingState.collect(::renderSourceEditing) }
                 launch { persistentViewModel.periodBudgetDraft.collect(::renderPeriodBudget) }
                 launch { persistentViewModel.expenseCreationState.collect(::renderExpenseCreation) }
+                if (calculatorId == ManyManagerDao.LOCAL_CALCULATOR_ID)
+                    launch { secondHomeViewModel.activeBudget.collect(::renderSecondHome) }
             }
         }
     }
@@ -124,7 +145,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshDate() {
         currentDate = LocalDate.now()
-        if (contentReady) persistentViewModel.refresh()
+        if (contentReady) {
+            persistentViewModel.refresh()
+            if (calculatorId == ManyManagerDao.LOCAL_CALCULATOR_ID) secondHomeViewModel.refresh()
+        }
     }
 
     override fun onResume() {
@@ -156,6 +180,8 @@ class MainActivity : AppCompatActivity() {
     private fun renderContent(savedInstanceState: Bundle?) {
         homeBudgetUi?.dispose()
         homeBudgetUi = null
+        secondHomeUi?.dispose()
+        secondHomeUi = null
         budgetManagementUi = null
         categoryManagementUi = null
         dismissActiveDialogImmediately()
@@ -195,11 +221,18 @@ class MainActivity : AppCompatActivity() {
                 pageHistory.add(PageVisit(it[0], it[1], it[2]))
             }
         }
-        page = savedInstanceState?.getInt("page") ?: 0
+        page = savedInstanceState?.getInt("page") ?: intent.getIntExtra("startPage", 0).coerceIn(0, 5)
         tab = savedInstanceState?.getInt("tab") ?: 0
         savedInstanceState?.getIntArray("expanded")?.forEach { expanded.add(it) }
         findViewById<View>(R.id.menuButton).setOnClickListener { showMenu() }
         findViewById<View>(R.id.addExpense).setOnClickListener { showExpense() }
+        findViewById<View>(R.id.addSecondExpense).setOnClickListener { openCalculator(ManyManagerDao.SECOND_CALCULATOR_ID, 5, true) }
+        findViewById<View>(R.id.addExpense).contentDescription = getString(R.string.add_expense) + ": " + getString(R.string.main_calculator)
+        findViewById<View>(R.id.addSecondExpense).contentDescription = getString(R.string.add_expense) + ": " + getString(R.string.second_calculator)
+        findViewById<View>(R.id.secondBudget).setOnClickListener { navigateToPage(3) }
+        findViewById<View>(R.id.secondCategories).setOnClickListener { navigateToPage(4) }
+        findViewById<View>(R.id.secondExpenses).setOnClickListener { navigateToPage(1); selectTab(2) }
+        findViewById<View>(R.id.secondAddExpense).setOnClickListener { showExpense() }
         listOf(R.id.categoryTab, R.id.sourceTab, R.id.allTab).forEachIndexed { index, id ->
             findViewById<View>(id).setOnClickListener { selectTab(index) }
         }
@@ -248,7 +281,15 @@ class MainActivity : AppCompatActivity() {
             homeBudgetUi?.setExpanded(!budgetState.breakdownExpanded)
         }) { expanded ->
             budgetState.breakdownExpanded = expanded
-            pageBackCallback.isEnabled = page != 0 || budgetState.breakdownExpanded
+            pageBackCallback.isEnabled = page != 0 || budgetState.breakdownExpanded || secondExpanded
+        }
+        findViewById<View>(R.id.homeSecondSummaryCard).isSaveFromParentEnabled = false
+        findViewById<View>(R.id.homeSecondSummaryCard).findViewById<TextView>(R.id.homeCalculatorLabel).setText(R.string.second_calculator)
+        secondHomeUi = BudgetHomeUi(findViewById(R.id.homeSecondSummaryCard), {
+            secondHomeUi?.setExpanded(!secondExpanded)
+        }) { expanded ->
+            secondExpanded = expanded
+            pageBackCallback.isEnabled = page != 0 || budgetState.breakdownExpanded || secondExpanded
         }
         budgetManagementUi = BudgetManagementUi(
             findViewById(R.id.budgetPage),
@@ -309,6 +350,7 @@ class MainActivity : AppCompatActivity() {
         contentReady = true
         renderPersistentDataState(persistentViewModel.state.value)
         renderActiveBudget(persistentViewModel.activeBudget.value)
+        if (calculatorId == ManyManagerDao.LOCAL_CALCULATOR_ID) renderSecondHome(secondHomeViewModel.activeBudget.value)
         renderSources(persistentViewModel.sources.value)
         renderCategoryState(persistentViewModel.categories.value)
         renderExpenseCreation(persistentViewModel.expenseCreationState.value)
@@ -346,9 +388,21 @@ class MainActivity : AppCompatActivity() {
             homeBudgetUi?.setExpanded(false)
             return
         }
+        if (page == 0 && secondExpanded) { secondHomeUi?.setExpanded(false); return }
+        if (calculatorId == ManyManagerDao.SECOND_CALCULATOR_ID && pageHistory.isEmpty()) { finish(); return }
         val previous = pageHistory.removeLastOrNull() ?: PageVisit(0, 0, 0)
         selectPage(previous.page, animate = true, scrollY = previous.scrollY)
         selectTab(previous.tab)
+    }
+
+    private fun openCalculator(id: String, initialPage: Int, expense: Boolean = false) {
+        startActivity(Intent(this, MainActivity::class.java)
+            .putExtra("calculatorId", id).putExtra("startPage", initialPage).putExtra("openExpense", expense))
+    }
+
+    private fun navigateFromMenu(index: Int) {
+        val target = if (index == 5) ManyManagerDao.SECOND_CALCULATOR_ID else ManyManagerDao.LOCAL_CALCULATOR_ID
+        if (target != calculatorId) openCalculator(target, index) else navigateToPage(index)
     }
 
     private fun navigateToPage(index: Int) {
@@ -372,10 +426,14 @@ class MainActivity : AppCompatActivity() {
             updatePage = {
                 if (page == 0 && index != 0) homeBudgetUi?.setExpanded(false, animate = false)
                 page = index
-                pageBackCallback.isEnabled = index != 0 || budgetState.breakdownExpanded
+                pageBackCallback.isEnabled = index != 0 || budgetState.breakdownExpanded || secondExpanded
+                findViewById<TextView>(R.id.activeCalculatorLabel).apply {
+                    text = calculatorDisplayName
+                    visibility = if (index == 0) View.GONE else View.VISIBLE
+                }
                 categoryManagementUi?.render(persistentViewModel.categories.value)
                 listOf(R.id.homePage, R.id.summaryPage, R.id.settingsPage,
-                    R.id.budgetPage, R.id.categoriesPage).forEachIndexed { i, id ->
+                    R.id.budgetPage, R.id.categoriesPage, R.id.secondCalculatorPage).forEachIndexed { i, id ->
                     findViewById<View>(id).visibility = if (i == index) View.VISIBLE else View.GONE
                 }
             },
@@ -477,6 +535,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun renderSecondHome(state: PersistentDataState) {
+        if (!contentReady) return
+        val root = findViewById<View>(R.id.homeSecondSummaryCard)
+        secondHomeUi?.renderState(state, secondExpanded, secondHomeViewModel::refresh)
+        val snapshot = (state as? PersistentDataState.Ready)?.snapshot
+        root.findViewById<TextView>(R.id.homeTotal).text = snapshot?.let {
+            getString(R.string.ils_amount, BudgetAmounts.number(it.totalSpentMinor, resources.configuration.locales[0]))
+        } ?: "—"
+        root.findViewById<TextView>(R.id.homeMonth).text = snapshot?.let { BudgetPeriodFormatter.format(this, it.period) } ?: "—"
+    }
+
     private fun renderSources(state: SourceListState) {
         if (!contentReady) return
         expenseDialog?.renderSources(state)
@@ -497,7 +566,7 @@ class MainActivity : AppCompatActivity() {
         if (periodBudgetDialog == null) {
             val form = layoutInflater.inflate(R.layout.dialog_period_budget, null)
             form.findViewById<TextView>(R.id.periodBudgetTitle).text =
-                getString(R.string.budget_for_month, BudgetPeriodFormatter.format(this, state.period))
+                calculatorTitle(getString(R.string.budget_for_month, BudgetPeriodFormatter.format(this, state.period)))
             val input = form.findViewById<android.widget.EditText>(R.id.periodBudgetAmount).apply {
                 setText(state.text)
                 doAfterTextChanged { persistentViewModel.updatePeriodBudget(it.toString()) }
@@ -673,7 +742,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMenu() {
         dismissActiveDialogImmediately()
-        val dialog = SideMenuDialog(this, findViewById(R.id.menuButton), ::navigateToPage)
+        val dialog = SideMenuDialog(this, findViewById(R.id.menuButton), ::navigateFromMenu)
         activeDialog = dialog
         dialog.setOnDismissListener { if (activeDialog === dialog) activeDialog = null }
         dialog.show()
@@ -794,6 +863,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveUiState(outState: Bundle) {
+        outState.putString("calculatorId", calculatorId)
+        outState.putBoolean("secondExpanded", secondExpanded)
         val hierarchy = SparseArray<Parcelable>()
         findViewById<View>(R.id.windowRoot).saveHierarchyState(hierarchy)
         outState.putSparseParcelableArray("viewHierarchy", hierarchy)
@@ -834,6 +905,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         homeBudgetUi?.dispose()
         homeBudgetUi = null
+        secondHomeUi?.dispose()
+        secondHomeUi = null
         budgetManagementUi = null
         categoryManagementUi = null
         appearanceTransition.clear()

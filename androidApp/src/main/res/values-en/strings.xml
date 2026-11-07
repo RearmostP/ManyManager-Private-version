@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="main_calculator">Main calculator</string>
+    <string name="second_calculator">Second calculator</string>
+    <string name="second_calculator_management">Manage second calculator</string>
     <string name="rename_category">Rename category</string>
     <string name="rename_category_label">Rename category %1$s</string>
     <string name="rename_subcategory_label">Rename subcategory %1$s</string>

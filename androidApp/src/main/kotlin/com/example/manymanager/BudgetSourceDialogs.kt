@@ -26,7 +26,7 @@ class SourceCreationDialog(
             dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener { onCancel() }
         }
     }
-    fun show() { dialog.showWithRoundedSurface() }
+    fun show() { dialog.setTitle(input.context.calculatorName()); dialog.showWithRoundedSurface() }
     fun render(state: SourceCreationState) {
         if (input.text.toString() != state.name) input.setText(state.name)
         input.isEnabled = !state.submitting && !state.interrupted
@@ -58,7 +58,7 @@ class SourceEditingDialog(
             dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener { onCancel() }
         }
     }
-    fun show() { dialog.showWithRoundedSurface() }
+    fun show() { dialog.setTitle(input.context.calculatorName()); dialog.showWithRoundedSurface() }
     fun render(state: SourceEditingState) {
         if (input.text.toString() != state.name) input.setText(state.name)
         input.isEnabled = !state.submitting && !state.interrupted
